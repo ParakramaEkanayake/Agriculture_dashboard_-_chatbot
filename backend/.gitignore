@@ -1,0 +1,25 @@
+# Environment variables (API keys - never push this)
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Dataset (optional - if too large for github)
+# Agriculture_dataset.csv
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

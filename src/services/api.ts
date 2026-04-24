@@ -29,3 +29,11 @@ export const fetchData = (page = 1, limit = 50, soil = "all", crop = "all", fert
 
 export const sendChat = (message: string) =>
   api.post("/chat", { message }).then(r => r.data);
+
+// New LLM Chat service
+export const sendLLMChat = (message: string) =>
+  api.post("/llm-chat", { message }).then(r => r.data);
+
+// Optional: Reset LLM history
+export const resetLLMChat = () =>
+  api.post("/llm-reset").then(r => r.data);

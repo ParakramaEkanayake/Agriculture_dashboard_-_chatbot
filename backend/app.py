@@ -1,3 +1,4 @@
+from llm_chat import llm_chat, reset_conversation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd
@@ -9,6 +10,37 @@ import random
 app = Flask(__name__)
 CORS(app)
 
+@app.route("/api/llm-chat", methods=["POST"])
+def llm_chat_endpoint():
+    """
+    New LLM-powered chatbot endpoint.
+    Returns both text response and optional dashboard filter instructions.
+    Does NOT interfere with existing /api/chat.
+    """
+    data  = request.get_json(force=True)
+    query = data.get("message", "").strip()
+    session_id = data.get("session_id", "default")
+
+    if not query:
+        return jsonify({"error": "Empty message"}), 400
+
+    result = llm_chat(query, session_id)
+
+    return jsonify({
+        "response":   result["response"],
+        "filters":    result["filters"],
+        "has_filter": result["has_filter"],
+        "status":     result["status"]
+    })
+
+
+@app.route("/api/llm-chat/reset", methods=["POST"])
+def llm_chat_reset():
+    """
+    Resets conversation history for LLM chatbot.
+    """
+    result = reset_conversation()
+    return jsonify(result)
 # ─────────────────────────────────────────────
 #  Synthetic dataset generation (mirrors the
 #  real CSV columns shown in the assignment)
@@ -49,7 +81,7 @@ FERTILIZERS = [
 
 # df = generate_dataset(500)
 
-df = pd.read_csv(r"D:\Downloads\intelligent-visual-analytics-system (1)\backend\Agriculture_dataset.csv")
+df = pd.read_csv(r"E:\Y4S2\VAU\Project\Agriculture_dashboard_-_chatbot\backend\Agriculture_dataset.csv")
 # ─────────────────────────────────────────────
 #  Helper: safe JSON serialisation
 # ─────────────────────────────────────────────
@@ -577,3 +609,5 @@ def chat():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
+

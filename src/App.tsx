@@ -3,21 +3,21 @@ import {
   LayoutDashboard, Leaf, Bot, Wifi, WifiOff, Menu, X,
 } from "lucide-react";
 import KPICard from "./components/KPICard";
-import OverviewTab      from "./components/OverviewTab";
-import NutrientsTab     from "./components/NutrientsTab";
-import CorrelationTab   from "./components/CorrelationTab";
-import DataTableTab     from "./components/DataTableTab";
-import StatsTab         from "./components/StatsTab";
-import ChatBot          from "./components/ChatBot";
-import { fetchKPIs, fetchFilters }    from "./services/api";
-import { mockKPIs }     from "./services/mockData";
+import OverviewTab from "./components/OverviewTab";
+import NutrientsTab from "./components/NutrientsTab";
+import CorrelationTab from "./components/CorrelationTab";
+import DataTableTab from "./components/DataTableTab";
+import StatsTab from "./components/StatsTab";
+import ChatBot from "./components/ChatBot";
+import { fetchKPIs, fetchFilters } from "./services/api";
+import { mockKPIs } from "./services/mockData";
 
 // ─────────────────────────────────────────────
 type TabId = "overview" | "nutrients" | "correlation" | "stats" | "data";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id:"overview",     label:"Overview",      icon:<LayoutDashboard className="w-4 h-4" />, desc:"Distributions & trends" },
-  { id:"nutrients",    label:"Advanced",     icon:<Leaf            className="w-4 h-4" />, desc:"NPK & carbon analysis" },
+  { id: "overview", label: "Overview", icon: <LayoutDashboard className="w-4 h-4" />, desc: "Distributions & trends" },
+  { id: "nutrients", label: "Advanced", icon: <Leaf className="w-4 h-4" />, desc: "NPK & carbon analysis" },
   // { id:"correlation",  label:"Correlations",  icon:<GitBranch       className="w-4 h-4" />, desc:"Scatter & heatmap" },
   // { id:"stats",        label:"Statistics",    icon:<BarChart2       className="w-4 h-4" />, desc:"Descriptive stats" },
   // { id:"data",         label:"Data Table",    icon:<Table2          className="w-4 h-4" />, desc:"Raw data explorer" },
@@ -25,14 +25,14 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] 
 
 // ─────────────────────────────────────────────
 function App() {
-  const [activeTab,      setActiveTab]      = useState<TabId>("overview");
-  const [kpis,           setKpis]           = useState<any>(mockKPIs);
-  const [backendOnline,  setBackendOnline]  = useState(false);
-  const [filters,        setFilters]        = useState<any>({ crops: [] });
-  const [selectedCrop,   setSelectedCrop]   = useState("");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [kpis, setKpis] = useState<any>(mockKPIs);
+  const [backendOnline, setBackendOnline] = useState(false);
+  const [filters, setFilters] = useState<any>({ crops: [] });
+  const [selectedCrop, setSelectedCrop] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [chatOpen,       setChatOpen]       = useState(false);
-  const [checking,       setChecking]       = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   // Check backend & load KPIs
   useEffect(() => {
@@ -87,11 +87,10 @@ function App() {
           <nav className="hidden lg:flex items-center gap-1">
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
                     ? "bg-green-600 text-white shadow"
                     : "text-gray-600 hover:bg-gray-100"
-                }`}>
+                  }`}>
                 {tab.icon} {tab.label}
               </button>
             ))}
@@ -109,11 +108,10 @@ function App() {
                 ))}
               </select>
             </div>
-            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-              checking ? "bg-gray-50 text-gray-500 border-gray-200"
-              : backendOnline ? "bg-green-50 text-green-700 border-green-200"
-              : "bg-amber-50 text-amber-700 border-amber-200"
-            }`}>
+            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${checking ? "bg-gray-50 text-gray-500 border-gray-200"
+                : backendOnline ? "bg-green-50 text-green-700 border-green-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}>
               {checking ? (
                 <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
               ) : backendOnline ? (
@@ -135,9 +133,8 @@ function App() {
             {TABS.map(tab => (
               <button key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  activeTab === tab.id ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-100"
-                }`}>
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === tab.id ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                  }`}>
                 {tab.icon} {tab.label}
               </button>
             ))}
@@ -160,11 +157,11 @@ function App() {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* <KPICard title="Total Records"    value={kpis.total_records?.toLocaleString() ?? "—"} icon="📦" color="bg-gradient-to-r from-slate-700 to-slate-600" /> */}
-            <KPICard title="Temperature"  value={`${kpis.temperature?.latest ?? "—"}°C`}          color="text-red-600" textColor="text-gray-900" changePct={kpis.temperature?.change_pct} changeDir={kpis.temperature?.change_dir} borderColor="border-red-500" />
-            <KPICard title="Moisture"     value={kpis.moisture?.latest ?? "—"}                    color="text-blue-600" textColor="text-gray-900" changePct={kpis.moisture?.change_pct} changeDir={kpis.moisture?.change_dir} borderColor="border-blue-500" />
-            <KPICard title="Nitrogen"  value={kpis.nitrogen?.latest ?? "—"}                          color="text-emerald-600" textColor="text-gray-900" changePct={kpis.nitrogen?.change_pct} changeDir={kpis.nitrogen?.change_dir} borderColor="border-emerald-500" />
-            <KPICard title="Phosphorus" value={kpis.phosphorus?.latest ?? "—"}                         color="text-violet-600" textColor="text-gray-900" changePct={kpis.phosphorus?.change_pct} changeDir={kpis.phosphorus?.change_dir} borderColor="border-violet-500" />
-            <KPICard title="Potassium"  value={kpis.potassium?.latest ?? "—"}                          color="text-orange-600" textColor="text-gray-900" changePct={kpis.potassium?.change_pct} changeDir={kpis.potassium?.change_dir} borderColor="border-orange-500" />
+            <KPICard title="Temperature" value={`${kpis.temperature?.latest ?? "—"}°C`} color="text-red-600" textColor="text-gray-900" changePct={kpis.temperature?.change_pct} changeDir={kpis.temperature?.change_dir} borderColor="border-red-500" />
+            <KPICard title="Moisture" value={kpis.moisture?.latest ?? "—"} color="text-blue-600" textColor="text-gray-900" changePct={kpis.moisture?.change_pct} changeDir={kpis.moisture?.change_dir} borderColor="border-blue-500" />
+            <KPICard title="Nitrogen" value={kpis.nitrogen?.latest ?? "—"} color="text-emerald-600" textColor="text-gray-900" changePct={kpis.nitrogen?.change_pct} changeDir={kpis.nitrogen?.change_dir} borderColor="border-emerald-500" />
+            <KPICard title="Phosphorus" value={kpis.phosphorus?.latest ?? "—"} color="text-violet-600" textColor="text-gray-900" changePct={kpis.phosphorus?.change_pct} changeDir={kpis.phosphorus?.change_dir} borderColor="border-violet-500" />
+            <KPICard title="Potassium" value={kpis.potassium?.latest ?? "—"} color="text-orange-600" textColor="text-gray-900" changePct={kpis.potassium?.change_pct} changeDir={kpis.potassium?.change_dir} borderColor="border-orange-500" />
             {/* <KPICard title="Dominant Soil"    value={kpis.dominant_soil ?? "—"}                   icon="🏔️" color="bg-gradient-to-r from-green-600 to-emerald-600" subtitle={`${kpis.soil_types} types`} /> */}
             {/* <KPICard title="Top Crop"         value={kpis.dominant_crop ? kpis.dominant_crop.charAt(0).toUpperCase()+kpis.dominant_crop.slice(1) : "—"} icon="🌾" color="bg-gradient-to-r from-yellow-500 to-amber-600" subtitle={`${kpis.crop_types} crops`} /> */}
           </div>
@@ -193,11 +190,11 @@ function App() {
 
       {/* ── Main Content ─────────────────────────────────────────────── */}
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-10 pt-4">
-        {activeTab === "overview"    && <OverviewTab    backendOnline={backendOnline} selectedCrop={selectedCrop} />}
-        {activeTab === "nutrients"   && <NutrientsTab   backendOnline={backendOnline} />}
+        {activeTab === "overview" && <OverviewTab backendOnline={backendOnline} selectedCrop={selectedCrop} />}
+        {activeTab === "nutrients" && <NutrientsTab backendOnline={backendOnline} />}
         {activeTab === "correlation" && <CorrelationTab backendOnline={backendOnline} />}
-        {activeTab === "stats"       && <StatsTab       backendOnline={backendOnline} />}
-        {activeTab === "data"        && <DataTableTab   backendOnline={backendOnline} />}
+        {activeTab === "stats" && <StatsTab backendOnline={backendOnline} />}
+        {activeTab === "data" && <DataTableTab backendOnline={backendOnline} />}
       </main>
 
       <div className="fixed right-5 bottom-5 z-50 flex flex-col items-end gap-3">
@@ -225,7 +222,12 @@ function App() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <ChatBot backendOnline={backendOnline} />
+            <ChatBot
+              backendOnline={backendOnline}
+              onFilterChange={(filters: any) => {
+                if (filters?.crop) setSelectedCrop(filters.crop);
+              }}
+            />
           </div>
         )}
       </div>

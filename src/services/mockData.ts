@@ -5,6 +5,11 @@
 
 export const mockKPIs = {
   total_records: 500,
+  temperature: { latest: 36.52, change_pct: 2.5, change_dir: "up" },
+  moisture: { latest: 0.5502, change_pct: -1.2, change_dir: "down" },
+  nitrogen: { latest: 65.21, change_pct: 0.8, change_dir: "up" },
+  phosphorus: { latest: 76.96, change_pct: -0.5, change_dir: "down" },
+  potassium: { latest: 96.43, change_pct: 1.1, change_dir: "up" },
   avg_temperature: 36.52,
   avg_moisture: 0.5502,
   avg_ph: 6.83,
@@ -141,20 +146,28 @@ const fertilizers = ["Compost","Balanced NPK","Water Retention","Organic Fe","Gy
 
 export function mockTableData(page = 1, limit = 50) {
   const rng = seededRand(page * 31337);
-  const data = Array.from({length:limit}, (_, i) => ({
-    id: (page-1)*limit + i + 1,
-    Temperature: parseFloat((18 + rng()*37).toFixed(4)),
-    Moisture:    parseFloat((0.2 + rng()*0.7).toFixed(6)),
-    Rainfall:    parseFloat((180 + rng()*140).toFixed(4)),
-    PH:          parseFloat((4.8 + rng()*4.0).toFixed(4)),
-    Nitrogen:    parseFloat((30  + rng()*70 ).toFixed(4)),
-    Phosphorus:  parseFloat((40  + rng()*130).toFixed(4)),
-    Potassium:   parseFloat((55  + rng()*105).toFixed(4)),
-    Carbon:      parseFloat((-0.5+ rng()*3.3).toFixed(4)),
-    Soil:        soils[Math.floor(rng()*soils.length)],
-    Crop:        crops[Math.floor(rng()*crops.length)],
-    Fertilizer:  fertilizers[Math.floor(rng()*fertilizers.length)],
-  }));
+  const baseDate = new Date(2025, 9, 23); // October 23, 2025
+  const data = Array.from({length:limit}, (_, i) => {
+    const date = new Date(baseDate.getTime() + ((page-1)*limit + i) * 24 * 60 * 60 * 1000);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const year = date.getFullYear();
+    return {
+      id: (page-1)*limit + i + 1,
+      Date: `${month.toString().padStart(2,'0')}/${day.toString().padStart(2,'0')}/${year}`,
+      Temperature: parseFloat((18 + rng()*37).toFixed(4)),
+      Moisture:    parseFloat((0.2 + rng()*0.7).toFixed(6)),
+      Rainfall:    parseFloat((180 + rng()*140).toFixed(4)),
+      PH:          parseFloat((4.8 + rng()*4.0).toFixed(4)),
+      Nitrogen:    parseFloat((30  + rng()*70 ).toFixed(4)),
+      Phosphorus:  parseFloat((40  + rng()*130).toFixed(4)),
+      Potassium:   parseFloat((55  + rng()*105).toFixed(4)),
+      Carbon:      parseFloat((-0.5+ rng()*3.3).toFixed(4)),
+      Soil:        soils[Math.floor(rng()*soils.length)],
+      Crop:        crops[Math.floor(rng()*crops.length)],
+      Fertilizer:  fertilizers[Math.floor(rng()*fertilizers.length)],
+    };
+  });
   return { total:500, page, limit, data };
 }
 

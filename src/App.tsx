@@ -17,7 +17,7 @@ type TabId = "overview" | "nutrients" | "correlation" | "stats" | "data";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] = [
   { id:"overview",     label:"Overview",      icon:<LayoutDashboard className="w-4 h-4" />, desc:"Distributions & trends" },
-  { id:"nutrients",    label:"Nutrients",     icon:<Leaf            className="w-4 h-4" />, desc:"NPK & carbon analysis" },
+  { id:"nutrients",    label:"Advanced",     icon:<Leaf            className="w-4 h-4" />, desc:"NPK & carbon analysis" },
   // { id:"correlation",  label:"Correlations",  icon:<GitBranch       className="w-4 h-4" />, desc:"Scatter & heatmap" },
   // { id:"stats",        label:"Statistics",    icon:<BarChart2       className="w-4 h-4" />, desc:"Descriptive stats" },
   // { id:"data",         label:"Data Table",    icon:<Table2          className="w-4 h-4" />, desc:"Raw data explorer" },
@@ -29,34 +29,43 @@ function App() {
   const [kpis,           setKpis]           = useState<any>(mockKPIs);
   const [backendOnline,  setBackendOnline]  = useState(false);
   const [filters,        setFilters]        = useState<any>({ crops: [] });
-  const [selectedCrop,   setSelectedCrop]   = useState("all");
+  const [selectedCrop,   setSelectedCrop]   = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen,       setChatOpen]       = useState(false);
   const [checking,       setChecking]       = useState(true);
 
   // Check backend & load KPIs
   useEffect(() => {
-    fetchKPIs()
+    fetchKPIs(selectedCrop || "all")
       .then(data => { setKpis(data); setBackendOnline(true); })
       .catch(() => { setKpis(mockKPIs); setBackendOnline(false); })
       .finally(() => setChecking(false));
-  }, []);
+  }, [selectedCrop]);
 
   useEffect(() => {
     if (backendOnline) {
       fetchFilters()
-        .then(data => setFilters(data))
-        .catch(() => setFilters({ crops: ["rice", "wheat", "maize", "soybean", "cotton"] }));
+        .then(data => {
+          setFilters(data);
+          if (!selectedCrop || !data.crops.includes(selectedCrop)) {
+            setSelectedCrop(data.crops[0] || "");
+          }
+        })
+        .catch(() => {
+          const mockCrops = ["rice", "wheat", "maize", "soybean", "cotton"];
+          setFilters({ crops: mockCrops });
+          if (!selectedCrop || !mockCrops.includes(selectedCrop)) {
+            setSelectedCrop(mockCrops[0]);
+          }
+        });
     } else {
-      setFilters({ crops: ["rice", "wheat", "maize", "soybean", "cotton"] });
+      const mockCrops = ["rice", "wheat", "maize", "soybean", "cotton"];
+      setFilters({ crops: mockCrops });
+      if (!selectedCrop || !mockCrops.includes(selectedCrop)) {
+        setSelectedCrop(mockCrops[0]);
+      }
     }
-  }, [backendOnline]);
-
-  useEffect(() => {
-    if (selectedCrop !== "all" && !filters.crops.includes(selectedCrop)) {
-      setSelectedCrop("all");
-    }
-  }, [filters, selectedCrop]);
+  }, [backendOnline, selectedCrop]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-green-50/30 to-emerald-50/20 font-sans">
@@ -95,7 +104,6 @@ function App() {
               <select className="border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
                 value={selectedCrop}
                 onChange={e => setSelectedCrop(e.target.value)}>
-                <option value="all">All Crops</option>
                 {filters.crops.map((crop: string) => (
                   <option key={crop} value={crop} className="capitalize">{crop}</option>
                 ))}
@@ -138,7 +146,6 @@ function App() {
               <select className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
                 value={selectedCrop}
                 onChange={e => setSelectedCrop(e.target.value)}>
-                <option value="all">All Crops</option>
                 {filters.crops.map((crop: string) => (
                   <option key={crop} value={crop} className="capitalize">{crop}</option>
                 ))}
@@ -153,11 +160,11 @@ function App() {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* <KPICard title="Total Records"    value={kpis.total_records?.toLocaleString() ?? "—"} icon="📦" color="bg-gradient-to-r from-slate-700 to-slate-600" /> */}
-            <KPICard title="Temperature"  value={`${kpis.latest_temperature_record ?? "—"}°C`}          icon="🌡️" color="bg-gradient-to-r from-red-500 to-orange-500" />
-            <KPICard title="Moisture"     value={kpis.latest_moisture_record ?? "—"}                    icon="💧" color="bg-gradient-to-r from-blue-500 to-cyan-500" />
-            <KPICard title="Nitrogen"  value={kpis.latest_N_record ?? "—"}                          icon="🌱" color="bg-gradient-to-r from-purple-500 to-violet-600" />
-            <KPICard title="Phosphorus" value={kpis.latest_P_record ?? "—"}                         icon="🌻" color="bg-gradient-to-r from-purple-500 to-violet-600" />
-            <KPICard title="Potassium"  value={kpis.latest_K_record ?? "—"}                          icon="🌾" color="bg-gradient-to-r from-purple-500 to-violet-600" />
+            <KPICard title="Temperature"  value={`${kpis.temperature?.latest ?? "—"}°C`}          color="text-red-600" textColor="text-gray-900" changePct={kpis.temperature?.change_pct} changeDir={kpis.temperature?.change_dir} />
+            <KPICard title="Moisture"     value={kpis.moisture?.latest ?? "—"}                    color="text-blue-600" textColor="text-gray-900" changePct={kpis.moisture?.change_pct} changeDir={kpis.moisture?.change_dir} />
+            <KPICard title="Nitrogen"  value={kpis.nitrogen?.latest ?? "—"}                          color="text-emerald-600" textColor="text-gray-900" changePct={kpis.nitrogen?.change_pct} changeDir={kpis.nitrogen?.change_dir} />
+            <KPICard title="Phosphorus" value={kpis.phosphorus?.latest ?? "—"}                         color="text-violet-600" textColor="text-gray-900" changePct={kpis.phosphorus?.change_pct} changeDir={kpis.phosphorus?.change_dir} />
+            <KPICard title="Potassium"  value={kpis.potassium?.latest ?? "—"}                          color="text-orange-600" textColor="text-gray-900" changePct={kpis.potassium?.change_pct} changeDir={kpis.potassium?.change_dir} />
             {/* <KPICard title="Dominant Soil"    value={kpis.dominant_soil ?? "—"}                   icon="🏔️" color="bg-gradient-to-r from-green-600 to-emerald-600" subtitle={`${kpis.soil_types} types`} /> */}
             {/* <KPICard title="Top Crop"         value={kpis.dominant_crop ? kpis.dominant_crop.charAt(0).toUpperCase()+kpis.dominant_crop.slice(1) : "—"} icon="🌾" color="bg-gradient-to-r from-yellow-500 to-amber-600" subtitle={`${kpis.crop_types} crops`} /> */}
           </div>

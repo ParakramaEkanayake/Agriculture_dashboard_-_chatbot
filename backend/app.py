@@ -225,23 +225,43 @@ def rainfall_nitrogen():
 # ── Top-level KPIs ────────────────────────────
 @app.route("/api/kpis")
 def kpis():
+    crop = request.args.get("crop", "all")
+    filtered_df = df[df["Crop"] == crop] if crop != "all" else df
+
+    def get_metric_stats(col):
+        if len(filtered_df) == 0:
+            return {"latest": None, "change_pct": 0, "change_dir": "neutral"}
+        latest = round(float(filtered_df[col].iloc[-1]), 2 if col != "Moisture" else 4)
+        if len(filtered_df) > 1:
+            previous = round(float(filtered_df[col].iloc[-2]), 2 if col != "Moisture" else 4)
+            if previous != 0:
+                pct = round(((latest - previous) / previous) * 100, 2)
+                direction = "up" if pct > 0 else "down" if pct < 0 else "neutral"
+            else:
+                pct = 0
+                direction = "neutral"
+        else:
+            pct = 0
+            direction = "neutral"
+        return {"latest": latest, "change_pct": pct, "change_dir": direction}
+
     return jsonify({
-        "total_records":      len(df),
-        "latest_N_record":     round(float(df["Nitrogen"].iloc[-1]), 2),
-        "latest_P_record":     round(float(df["Phosphorus"].iloc[-1]), 2),
-        "latest_K_record":     round(float(df["Potassium"].iloc[-1]), 2),
-        "latest_temperature_record": round(float(df["Temperature"].iloc[-1]), 2),
-        "latest_moisture_record":    round(float(df["Moisture"].iloc[-1]), 4),
-        "avg_temperature":    round(float(df["Temperature"].mean()), 2),
-        "avg_moisture":       round(float(df["Moisture"].mean()), 4),
-        "avg_ph":             round(float(df["PH"].mean()), 2),
-        "avg_nitrogen":       round(float(df["Nitrogen"].mean()), 2),
-        "dominant_soil":      df["Soil"].value_counts().idxmax(),
-        "dominant_crop":      df["Crop"].value_counts().idxmax(),
-        "dominant_fertilizer":df["Fertilizer"].value_counts().idxmax(),
-        "soil_types":         int(df["Soil"].nunique()),
-        "crop_types":         int(df["Crop"].nunique()),
-        "fertilizer_types":   int(df["Fertilizer"].nunique()),
+        "total_records":      len(filtered_df),
+        "temperature":        get_metric_stats("Temperature"),
+        "moisture":           get_metric_stats("Moisture"),
+        "nitrogen":           get_metric_stats("Nitrogen"),
+        "phosphorus":         get_metric_stats("Phosphorus"),
+        "potassium":          get_metric_stats("Potassium"),
+        "avg_temperature":    round(float(filtered_df["Temperature"].mean()), 2),
+        "avg_moisture":       round(float(filtered_df["Moisture"].mean()), 4),
+        "avg_ph":             round(float(filtered_df["PH"].mean()), 2),
+        "avg_nitrogen":       round(float(filtered_df["Nitrogen"].mean()), 2),
+        "dominant_soil":      filtered_df["Soil"].value_counts().idxmax() if len(filtered_df) > 0 else None,
+        "dominant_crop":      filtered_df["Crop"].value_counts().idxmax() if len(filtered_df) > 0 else None,
+        "dominant_fertilizer":filtered_df["Fertilizer"].value_counts().idxmax() if len(filtered_df) > 0 else None,
+        "soil_types":         int(filtered_df["Soil"].nunique()),
+        "crop_types":         int(filtered_df["Crop"].nunique()),
+        "fertilizer_types":   int(filtered_df["Fertilizer"].nunique()),
     })
 
 # ── Filter options ────────────────────────────

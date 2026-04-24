@@ -21,11 +21,11 @@ const METRICS = [
 const formatDate = (date: Date) => date.toISOString().slice(0, 10);
 
 const buildTimeSeries = (rows: any[]) => {
-  const start = new Date(2024, 0, 1);
-  return rows.map((row, index) => {
-    const next = new Date(start.getTime() + index * 24 * 60 * 60 * 1000);
+  return rows.map((row) => {
+    const [month, day, year] = row.Date.split('/').map(Number);
+    const dateObj = new Date(year, month - 1, day);
     return {
-      date: formatDate(next),
+      date: formatDate(dateObj),
       Temperature: row.Temperature,
       Moisture: row.Moisture,
       Rainfall: row.Rainfall,
@@ -34,6 +34,7 @@ const buildTimeSeries = (rows: any[]) => {
       Phosphorus: row.Phosphorus,
       Potassium: row.Potassium,
       Carbon: row.Carbon,
+      Crop: row.Crop,
     };
   });
 };
@@ -47,7 +48,7 @@ const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string }> = 
     const loadSeries = async () => {
       try {
         if (backendOnline) {
-          const result = await fetchData(1, 500);
+          const result = await fetchData(1, 500, "all", selectedCrop, "all");
           setTimeSeries(buildTimeSeries(result.data));
         } else {
           setTimeSeries(buildTimeSeries(mockTableData(1, 500).data));
@@ -57,11 +58,9 @@ const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string }> = 
       }
     };
     loadSeries();
-  }, [backendOnline]);
+  }, [backendOnline, selectedCrop]);
 
-  const cropFiltered = selectedCrop === "all"
-    ? timeSeries
-    : timeSeries.filter(row => row.Crop === selectedCrop);
+  const cropFiltered = timeSeries;
 
   const sortedSeries = [...cropFiltered].sort((a, b) => a.date.localeCompare(b.date));
   const defaultTo = sortedSeries.length ? sortedSeries[sortedSeries.length - 1].date : "";
@@ -89,8 +88,6 @@ const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string }> = 
                 type="date"
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
                 value={fromDate}
-                min={defaultFrom}
-                max={defaultTo}
                 onChange={e => setFromDate(e.target.value)}
               />
             </div>
@@ -100,8 +97,6 @@ const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string }> = 
                 type="date"
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
                 value={toDate}
-                min={defaultFrom}
-                max={defaultTo}
                 onChange={e => setToDate(e.target.value)}
               />
             </div>

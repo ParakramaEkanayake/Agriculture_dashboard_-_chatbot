@@ -4,19 +4,25 @@ interface Props {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: React.ReactNode;
-  color: string;       // Tailwind bg gradient classes
+  color?: string;       // Tailwind text color classes
   textColor?: string;
+  changePct?: number;
+  changeDir?: "up" | "down" | "neutral";
 }
 
-const KPICard: React.FC<Props> = ({ title, value, subtitle, icon, color, textColor = "text-white" }) => (
-  <div className={`${color} rounded-2xl p-5 shadow-lg flex items-center gap-4 min-w-0`}>
-    <div className="shrink-0 bg-white/20 rounded-xl p-3 text-2xl">{icon}</div>
+const KPICard: React.FC<Props> = ({ title, value, subtitle, color = "text-white", textColor = "text-white", changePct, changeDir }) => (
+  <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-lg flex items-center justify-between gap-4 min-w-0">
     <div className="min-w-0">
-      <p className={`text-xs font-semibold uppercase tracking-widest ${textColor} opacity-75 truncate`}>{title}</p>
+      <p className={`text-xs font-semibold uppercase tracking-widest ${color} opacity-75 truncate`}>{title}</p>
       <p className={`text-2xl font-bold ${textColor} truncate`}>{value}</p>
       {subtitle && <p className={`text-xs ${textColor} opacity-60 mt-0.5 truncate`}>{subtitle}</p>}
     </div>
+    {changePct !== undefined && changeDir && (
+      <div className={`flex items-center gap-1 ${changeDir === "up" ? "text-emerald-600" : changeDir === "down" ? "text-red-600" : "text-gray-500"}`}>
+        {changeDir === "up" ? <span className="text-lg">↑</span> : changeDir === "down" ? <span className="text-lg">↓</span> : <span className="text-lg">→</span>}
+        <span className="text-sm font-semibold">{Math.abs(changePct)}%</span>
+      </div>
+    )}
   </div>
 );
 

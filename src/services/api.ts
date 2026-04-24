@@ -4,7 +4,7 @@ const BASE = "http://localhost:5000/api";
 
 const api = axios.create({ baseURL: BASE, timeout: 10000 });
 
-export const fetchKPIs        = () => api.get("/kpis").then(r => r.data);
+export const fetchKPIs        = (crop = "all") => api.get(`/kpis?crop=${crop}`).then(r => r.data);
 export const fetchFilters     = () => api.get("/filters").then(r => r.data);
 export const fetchStats       = () => api.get("/stats").then(r => r.data);
 export const fetchSoilDist    = () => api.get("/soil-distribution").then(r => r.data);

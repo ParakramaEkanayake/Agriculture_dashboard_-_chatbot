@@ -78,7 +78,7 @@ function App() {
               <Leaf className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-black text-gray-900 text-lg leading-none tracking-tight">AgriAnalytics</h1>
+              <h1 className="font-black text-gray-900 text-lg leading-none tracking-tight">PolyAnalytics</h1>
               <p className="text-xs text-gray-400 leading-none">Smart Soil & Crop Intelligence</p>
             </div>
           </div>
@@ -100,7 +100,7 @@ function App() {
           {/* Status & mobile toggle */}
           <div className="flex items-center gap-3">
             <div className="hidden lg:flex flex-col min-w-[170px]">
-              <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1">Crop</label>
+              {/* <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1">Crop</label> */}
               <select className="border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
                 value={selectedCrop}
                 onChange={e => setSelectedCrop(e.target.value)}>
@@ -156,15 +156,15 @@ function App() {
       </header>
 
       {/* ── KPI Banner ────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 shadow-sm">
+      <div className="bg-white/10 backdrop-blur-md border-b border-white/20 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* <KPICard title="Total Records"    value={kpis.total_records?.toLocaleString() ?? "—"} icon="📦" color="bg-gradient-to-r from-slate-700 to-slate-600" /> */}
-            <KPICard title="Temperature"  value={`${kpis.temperature?.latest ?? "—"}°C`}          color="text-red-600" textColor="text-gray-900" changePct={kpis.temperature?.change_pct} changeDir={kpis.temperature?.change_dir} />
-            <KPICard title="Moisture"     value={kpis.moisture?.latest ?? "—"}                    color="text-blue-600" textColor="text-gray-900" changePct={kpis.moisture?.change_pct} changeDir={kpis.moisture?.change_dir} />
-            <KPICard title="Nitrogen"  value={kpis.nitrogen?.latest ?? "—"}                          color="text-emerald-600" textColor="text-gray-900" changePct={kpis.nitrogen?.change_pct} changeDir={kpis.nitrogen?.change_dir} />
-            <KPICard title="Phosphorus" value={kpis.phosphorus?.latest ?? "—"}                         color="text-violet-600" textColor="text-gray-900" changePct={kpis.phosphorus?.change_pct} changeDir={kpis.phosphorus?.change_dir} />
-            <KPICard title="Potassium"  value={kpis.potassium?.latest ?? "—"}                          color="text-orange-600" textColor="text-gray-900" changePct={kpis.potassium?.change_pct} changeDir={kpis.potassium?.change_dir} />
+            <KPICard title="Temperature"  value={`${kpis.temperature?.latest ?? "—"}°C`}          color="text-red-600" textColor="text-gray-900" changePct={kpis.temperature?.change_pct} changeDir={kpis.temperature?.change_dir} borderColor="border-red-500" />
+            <KPICard title="Moisture"     value={kpis.moisture?.latest ?? "—"}                    color="text-blue-600" textColor="text-gray-900" changePct={kpis.moisture?.change_pct} changeDir={kpis.moisture?.change_dir} borderColor="border-blue-500" />
+            <KPICard title="Nitrogen"  value={kpis.nitrogen?.latest ?? "—"}                          color="text-emerald-600" textColor="text-gray-900" changePct={kpis.nitrogen?.change_pct} changeDir={kpis.nitrogen?.change_dir} borderColor="border-emerald-500" />
+            <KPICard title="Phosphorus" value={kpis.phosphorus?.latest ?? "—"}                         color="text-violet-600" textColor="text-gray-900" changePct={kpis.phosphorus?.change_pct} changeDir={kpis.phosphorus?.change_dir} borderColor="border-violet-500" />
+            <KPICard title="Potassium"  value={kpis.potassium?.latest ?? "—"}                          color="text-orange-600" textColor="text-gray-900" changePct={kpis.potassium?.change_pct} changeDir={kpis.potassium?.change_dir} borderColor="border-orange-500" />
             {/* <KPICard title="Dominant Soil"    value={kpis.dominant_soil ?? "—"}                   icon="🏔️" color="bg-gradient-to-r from-green-600 to-emerald-600" subtitle={`${kpis.soil_types} types`} /> */}
             {/* <KPICard title="Top Crop"         value={kpis.dominant_crop ? kpis.dominant_crop.charAt(0).toUpperCase()+kpis.dominant_crop.slice(1) : "—"} icon="🌾" color="bg-gradient-to-r from-yellow-500 to-amber-600" subtitle={`${kpis.crop_types} crops`} /> */}
           </div>

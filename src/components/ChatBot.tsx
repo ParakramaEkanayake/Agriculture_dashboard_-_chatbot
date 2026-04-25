@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Sparkles, RefreshCw } from "lucide-react";
+import { Send, Bot, User, Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { sendChat, sendLLMChat, resetLLMChat } from "../services/api";
 
 
@@ -58,15 +58,39 @@ const QUICK_PROMPTS_CLASSIC = [
   "Best crop for loamy soil",
 ];
 
-const QUICK_PROMPTS_AI = [
-  "Show me Rice data",
-  "Which crop needs the most nitrogen?",
-  "Compare soil types",
-  "Show me Cotton in Acidic Soil",
-  "What factors influence moisture?",
-  "Recommend fertilizer for low pH",
-  "Explain temperature vs moisture trend",
-  "What is the average pH?",
+const QUICK_PROMPTS_AI_GROUPS = [
+  {
+    title: "Overview & Insights",
+    prompts: [
+      "What is the average pH?",
+      "Show me key statistics",
+      "Which crop needs the most nitrogen?",
+    ],
+  },
+  {
+    title: "Comparisons & Trends",
+    prompts: [
+      "Compare soil types",
+      "What factors influence moisture?",
+      "Explain temperature vs moisture trend",
+    ],
+  },
+  {
+    title: "Dashboard Actions",
+    prompts: [
+      "Show me Rice data",
+      "Show me Cotton in Acidic Soil",
+      "Filter dashboard to Loamy Soil",
+    ],
+  },
+  {
+    title: "Prediction & Decision Support",
+    prompts: [
+      "What should I grow in Loamy Soil at 25°C with pH 6.5?",
+      "Recommend fertilizer for low pH",
+      "Which crop is best for acidic soil?",
+    ],
+  },
 ];
 
 const ChatBot: React.FC<{
@@ -85,7 +109,7 @@ const ChatBot: React.FC<{
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
-
+  const [showPrompts, setShowPrompts] = useState(false);
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -94,7 +118,7 @@ const ChatBot: React.FC<{
     if (!text.trim() || loading) return;
     const userMsg: Message = {
       id: Date.now(), role: "user", text,
-      time: new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }),
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
@@ -108,6 +132,15 @@ const ChatBot: React.FC<{
           const res = await sendLLMChat(text);
           botText = res.response;
 
+          // ── If prediction was made, show result ──
+          if (res.prediction) {
+            const top3 = res.prediction.top_3_crops;
+            botText += `\n\n📊 **Quick View:**\n` +
+              top3.map((c: any, i: number) =>
+                `${i + 1}. ${c.crop} — ${c.confidence}%`
+              ).join("\n");
+          }
+
           // ── Apply dashboard filters if detected ──
           if (res.has_filter && res.filters && onFilterChange) {
             onFilterChange(res.filters);
@@ -119,15 +152,15 @@ const ChatBot: React.FC<{
 
             // Add notification message to chat
             setMessages(prev => [...prev,
-              {
-                id: Date.now()+1, role:"bot", text: botText,
-                time: new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }),
-              },
-              {
-                id: Date.now()+2, role:"bot",
-                text: `🔄 **Dashboard updated** → ${filterSummary}`,
-                time: new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }),
-              }
+            {
+              id: Date.now() + 1, role: "bot", text: botText,
+              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+            {
+              id: Date.now() + 2, role: "bot",
+              text: `🔄 **Dashboard updated** → ${filterSummary}`,
+              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            }
             ]);
             setLoading(false);
             return; // Exit early since we already set messages
@@ -144,21 +177,21 @@ const ChatBot: React.FC<{
       }
 
       setMessages(prev => [...prev, {
-        id: Date.now()+1, role:"bot", text: botText,
-        time: new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }),
+        id: Date.now() + 1, role: "bot", text: botText,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       }]);
 
     } catch {
       setMessages(prev => [...prev, {
-        id: Date.now()+1, role:"bot",
+        id: Date.now() + 1, role: "bot",
         text: "⚠️ Sorry, I couldn't connect to the AI backend. Please try again.",
-        time: new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }),
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       }]);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const getGreeting = (currentMode: "classic" | "ai"): Message => ({
     id: Date.now(),
     role: "bot",
@@ -268,17 +301,68 @@ const ChatBot: React.FC<{
             </button>
           </form>
           {/* Quick Prompts */}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(mode === "ai" ? QUICK_PROMPTS_AI : QUICK_PROMPTS_CLASSIC).map(p => (
-              <button key={p} onClick={() => send(p)}
-                className={`text-left text-xs px-3 py-2 rounded-lg border transition-all font-medium ${
-                  mode === "ai"
-                    ? "bg-purple-50/80 text-purple-700 border-purple-200/50 hover:bg-purple-100"
-                    : "bg-gray-100/50 text-gray-700 border-gray-200/50 hover:bg-gray-100"
-                }`}>
-                {p}
-              </button>
-            ))}
+          {/* Quick Prompts */}
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setShowPrompts(v => !v)}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-semibold transition-all ${mode === "ai"
+                ? "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                }`}
+            >
+              <span>
+                {mode === "ai" ? "AI Quick Prompts" : "Classic Quick Prompts"}
+              </span>
+              {showPrompts ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+
+            {showPrompts && (
+              <div className="mt-2 space-y-3">
+                {mode === "ai" ? (
+                  QUICK_PROMPTS_AI_GROUPS.map(group => (
+                    <div key={group.title} className="space-y-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-purple-500">
+                        {group.title}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {group.prompts.map(p => (
+                          <button
+                            key={p}
+                            onClick={() => {
+                              send(p);
+                              setShowPrompts(false);
+                            }}
+                            className="text-left text-xs px-3 py-2 rounded-lg border transition-all font-medium bg-purple-50/80 text-purple-700 border-purple-200/50 hover:bg-purple-100"
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {QUICK_PROMPTS_CLASSIC.map(p => (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          send(p);
+                          setShowPrompts(false);
+                        }}
+                        className="text-left text-xs px-3 py-2 rounded-lg border transition-all font-medium bg-gray-100/50 text-gray-700 border-gray-200/50 hover:bg-gray-100"
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

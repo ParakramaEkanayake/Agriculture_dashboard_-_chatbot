@@ -37,3 +37,20 @@ export const sendLLMChat = (message: string) =>
 // Optional: Reset LLM history
 export const resetLLMChat = () =>
   api.post("/llm-reset").then(r => r.data);
+
+// ── Crop Prediction ───────────────────────
+export const predictCrop = (data: {
+  temperature: number;
+  moisture:    number;
+  rainfall:    number;
+  ph:          number;
+  nitrogen:    number;
+  phosphorus:  number;
+  potassium:   number;
+  carbon:      number;
+  soil:        string;
+}) => api.post("/predict-crop", data).then(r => r.data);
+
+// ── Feature Importance ────────────────────
+export const fetchFeatureImportance = () =>
+  api.get("/feature-importance").then(r => r.data);

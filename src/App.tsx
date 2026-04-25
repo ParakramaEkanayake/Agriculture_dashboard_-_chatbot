@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Leaf, Bot, Wifi, WifiOff, Menu, X,
+  LayoutDashboard, Leaf, Bot, Wifi, WifiOff, Menu, X, Sparkles,
 } from "lucide-react";
 import KPICard from "./components/KPICard";
 import OverviewTab from "./components/OverviewTab";
@@ -9,15 +9,17 @@ import CorrelationTab from "./components/CorrelationTab";
 import DataTableTab from "./components/DataTableTab";
 import StatsTab from "./components/StatsTab";
 import ChatBot from "./components/ChatBot";
+import PredictTab from "./components/PredictTab";
 import { fetchKPIs, fetchFilters } from "./services/api";
 import { mockKPIs } from "./services/mockData";
 
 // ─────────────────────────────────────────────
-type TabId = "overview" | "nutrients" | "correlation" | "stats" | "data";
+type TabId = "overview" | "nutrients" | "correlation" | "stats" | "data" | "predict";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] = [
   { id: "overview", label: "Overview", icon: <LayoutDashboard className="w-4 h-4" />, desc: "Distributions & trends" },
   { id: "nutrients", label: "Advanced", icon: <Leaf className="w-4 h-4" />, desc: "NPK & carbon analysis" },
+  { id: "predict", label: "Predict", icon: <Sparkles className="w-4 h-4" />, desc: "AI crop recommendation" },
   // { id:"correlation",  label:"Correlations",  icon:<GitBranch       className="w-4 h-4" />, desc:"Scatter & heatmap" },
   // { id:"stats",        label:"Statistics",    icon:<BarChart2       className="w-4 h-4" />, desc:"Descriptive stats" },
   // { id:"data",         label:"Data Table",    icon:<Table2          className="w-4 h-4" />, desc:"Raw data explorer" },
@@ -28,8 +30,9 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [kpis, setKpis] = useState<any>(mockKPIs);
   const [backendOnline, setBackendOnline] = useState(false);
-  const [filters, setFilters] = useState<any>({ crops: [] });
+  const [filters, setFilters] = useState<any>({ crops: [], soils: [] });
   const [selectedCrop, setSelectedCrop] = useState("");
+  const [selectedSoil, setSelectedSoil] = useState("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -88,8 +91,8 @@ function App() {
             {TABS.map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
-                    ? "bg-green-600 text-white shadow"
-                    : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-green-600 text-white shadow"
+                  : "text-gray-600 hover:bg-gray-100"
                   }`}>
                 {tab.icon} {tab.label}
               </button>
@@ -98,19 +101,47 @@ function App() {
 
           {/* Status & mobile toggle */}
           <div className="flex items-center gap-3">
-            <div className="hidden lg:flex flex-col min-w-[170px]">
-              {/* <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1">Crop</label> */}
-              <select className="border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
-                value={selectedCrop}
-                onChange={e => setSelectedCrop(e.target.value)}>
-                {filters.crops.map((crop: string) => (
-                  <option key={crop} value={crop} className="capitalize">{crop}</option>
-                ))}
-              </select>
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Crop Filter */}
+              <div className="flex flex-col min-w-[140px]">
+                <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1">
+                  Crop
+                </label>
+                <select
+                  className="border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={selectedCrop}
+                  onChange={e => setSelectedCrop(e.target.value)}
+                >
+                  {filters.crops?.map((crop: string) => (
+                    <option key={crop} value={crop} className="capitalize">
+                      {crop}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Soil Filter */}
+              <div className="flex flex-col min-w-[140px]">
+                <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1">
+                  Soil
+                </label>
+                <select
+                  className="border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={selectedSoil}
+                  onChange={e => setSelectedSoil(e.target.value)}
+                >
+                  <option value="all">All Soils</option>
+                  {filters.soils?.map((soil: string) => (
+                    <option key={soil} value={soil}>
+                      {soil}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${checking ? "bg-gray-50 text-gray-500 border-gray-200"
-                : backendOnline ? "bg-green-50 text-green-700 border-green-200"
-                  : "bg-amber-50 text-amber-700 border-amber-200"
+              : backendOnline ? "bg-green-50 text-green-700 border-green-200"
+                : "bg-amber-50 text-amber-700 border-amber-200"
               }`}>
               {checking ? (
                 <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
@@ -138,15 +169,41 @@ function App() {
                 {tab.icon} {tab.label}
               </button>
             ))}
-            <div className="col-span-2">
-              <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1 inline-block">Crop</label>
-              <select className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
-                value={selectedCrop}
-                onChange={e => setSelectedCrop(e.target.value)}>
-                {filters.crops.map((crop: string) => (
-                  <option key={crop} value={crop} className="capitalize">{crop}</option>
-                ))}
-              </select>
+            <div className="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1 inline-block">
+                  Crop
+                </label>
+                <select
+                  className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={selectedCrop}
+                  onChange={e => setSelectedCrop(e.target.value)}
+                >
+                  {filters.crops?.map((crop: string) => (
+                    <option key={crop} value={crop} className="capitalize">
+                      {crop}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.22em] text-gray-400 mb-1 inline-block">
+                  Soil
+                </label>
+                <select
+                  className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  value={selectedSoil}
+                  onChange={e => setSelectedSoil(e.target.value)}
+                >
+                  <option value="all">All Soils</option>
+                  {filters.soils?.map((soil: string) => (
+                    <option key={soil} value={soil}>
+                      {soil}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -190,8 +247,9 @@ function App() {
 
       {/* ── Main Content ─────────────────────────────────────────────── */}
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 pb-10 pt-4">
-        {activeTab === "overview" && <OverviewTab backendOnline={backendOnline} selectedCrop={selectedCrop} />}
+        {activeTab === "overview" && <OverviewTab backendOnline={backendOnline} selectedCrop={selectedCrop} selectedSoil={selectedSoil} />}
         {activeTab === "nutrients" && <NutrientsTab backendOnline={backendOnline} />}
+        {activeTab === "predict" && <PredictTab backendOnline={backendOnline} />}
         {activeTab === "correlation" && <CorrelationTab backendOnline={backendOnline} />}
         {activeTab === "stats" && <StatsTab backendOnline={backendOnline} />}
         {activeTab === "data" && <DataTableTab backendOnline={backendOnline} />}
@@ -224,8 +282,35 @@ function App() {
             </div>
             <ChatBot
               backendOnline={backendOnline}
-              onFilterChange={(filters: any) => {
-                if (filters?.crop) setSelectedCrop(filters.crop);
+              onFilterChange={(aiFilters: any) => {
+                // Handle crop filter
+                if (aiFilters?.crop) {
+                  if (aiFilters.crop.toLowerCase() === "all") {
+                    // Reset to first crop or keep current behavior
+                    setSelectedCrop(filters.crops?.[0] || "");
+                  } else {
+                    const exactCrop = filters.crops?.find(
+                      (c: string) => c.toLowerCase() === aiFilters.crop.toLowerCase()
+                    );
+                    if (exactCrop) {
+                      setSelectedCrop(exactCrop);
+                    }
+                  }
+                }
+
+                // Handle soil filter
+                if (aiFilters?.soil) {
+                  if (aiFilters.soil.toLowerCase() === "all") {
+                    setSelectedSoil("all");
+                  } else {
+                    const exactSoil = filters.soils?.find(
+                      (s: string) => s.toLowerCase() === aiFilters.soil.toLowerCase()
+                    );
+                    if (exactSoil) {
+                      setSelectedSoil(exactSoil);
+                    }
+                  }
+                }
               }}
             />
           </div>

@@ -39,7 +39,7 @@ const buildTimeSeries = (rows: any[]) => {
   });
 };
 
-const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string }> = ({ backendOnline, selectedCrop }) => {
+const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string; selectedSoil: string }> = ({ backendOnline, selectedCrop, selectedSoil }) => {
   const [timeSeries, setTimeSeries] = useState<any[]>([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -48,7 +48,7 @@ const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string }> = 
     const loadSeries = async () => {
       try {
         if (backendOnline) {
-          const result = await fetchData(1, 500, "all", selectedCrop, "all");
+          const result = await fetchData(1, 500, selectedSoil, selectedCrop, "all");
           setTimeSeries(buildTimeSeries(result.data));
         } else {
           setTimeSeries(buildTimeSeries(mockTableData(1, 500).data));
@@ -58,7 +58,7 @@ const OverviewTab: React.FC<{ backendOnline: boolean; selectedCrop: string }> = 
       }
     };
     loadSeries();
-  }, [backendOnline, selectedCrop]);
+  },[backendOnline, selectedCrop, selectedSoil]);
 
   const cropFiltered = timeSeries;
 

@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
 
+from crop_model import predict_crop
 # Load API key from .env
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -49,7 +50,175 @@ VALID_FERTILIZERS = [
 
 # ─────────────────────────────────────────────
 #live dataset context,This runs every message to give LLM up-to-date facts about the dataset
+def get_dataset_averages():
+    """
+    Returns dataset averages to use as
+    default values when user does not
+    specify all prediction inputs.
+    """
+    return {
+        "temperature": round(float(df["Temperature"].mean()), 2),
+        "moisture":    round(float(df["Moisture"].mean()), 4),
+        "rainfall":    round(float(df["Rainfall"].mean()), 2),
+        "ph":          round(float(df["PH"].mean()), 2),
+        "nitrogen":    round(float(df["Nitrogen"].mean()), 2),
+        "phosphorus":  round(float(df["Phosphorus"].mean()), 2),
+        "potassium":   round(float(df["Potassium"].mean()), 2),
+        "carbon":      round(float(df["Carbon"].mean()), 4),
+        "soil":        df["Soil"].value_counts().idxmax()
+    }
 
+def detect_reset_filters(message: str) -> dict:
+    """
+    Detects if user wants to reset/clear filters
+    and show all data.
+    
+    Returns dict with filters to reset to "all"
+    """
+    message_lower = message.lower()
+    
+    reset_filters = {}
+    
+    # ── Detect "all crops" or "clear crop" ──────
+    crop_reset_phrases = [
+        "all crops",
+        "show all crops",
+        "clear crop filter",
+        "reset crop filter",
+        "remove crop filter",
+        "any crop",
+        "every crop"
+    ]
+    if any(phrase in message_lower for phrase in crop_reset_phrases):
+        reset_filters["crop"] = "all"
+    
+    # ── Detect "all soils" or "clear soil" ──────
+    soil_reset_phrases = [
+        "all soil",
+        "all soils",
+        "show all soil",
+        "clear soil filter",
+        "reset soil filter",
+        "remove soil filter",
+        "any soil",
+        "every soil"
+    ]
+    if any(phrase in message_lower for phrase in soil_reset_phrases):
+        reset_filters["soil"] = "all"
+    
+    # ── Detect "all fertilizers" or "clear fertilizer" ──
+    fert_reset_phrases = [
+        "all fertilizer",
+        "all fertilizers",
+        "show all fertilizer",
+        "clear fertilizer filter",
+        "reset fertilizer filter",
+        "remove fertilizer filter"
+    ]
+    if any(phrase in message_lower for phrase in fert_reset_phrases):
+        reset_filters["fertilizer"] = "all"
+    
+    # ── Detect "reset all" or "show all data" ───
+    full_reset_phrases = [
+        "reset all",
+        "clear all",
+        "show all data",
+        "remove all filters",
+        "clear all filters",
+        "reset filters",
+        "show everything"
+    ]
+    if any(phrase in message_lower for phrase in full_reset_phrases):
+        reset_filters["crop"] = "all"
+        reset_filters["soil"] = "all"
+        reset_filters["fertilizer"] = "all"
+    
+    return reset_filters
+
+def is_prediction_question(message: str) -> bool:
+    """
+    Detects if user is asking for a
+    crop recommendation/prediction.
+    """
+    prediction_keywords = [
+        "recommend crop",
+        "best crop",
+        "suggest crop",
+        "predict crop",
+        "should i grow",
+        "suitable crop",
+        "what should i plant",
+        "what can i grow",
+        "crop recommendation",
+        "what to grow",
+        "which plant"
+    ]
+
+    message_lower = message.lower()
+    return any(keyword in message_lower for keyword in prediction_keywords)
+
+
+def extract_prediction_inputs(message: str) -> dict:
+    """
+    Extracts numeric values mentioned in
+    the user message for prediction inputs.
+    Uses dataset averages for missing values.
+    """
+    import re
+    averages = get_dataset_averages()
+    inputs   = averages.copy()
+
+    # ── Extract temperature ────────────────
+    temp_match = re.search(
+        r'(\d+\.?\d*)\s*°?c|temperature\s+(?:of\s+)?(\d+\.?\d*)',
+        message, re.IGNORECASE
+    )
+    if temp_match:
+        val = temp_match.group(1) or temp_match.group(2)
+        if val: inputs["temperature"] = float(val)
+
+    # ── Extract pH ─────────────────────────
+    ph_match = re.search(
+        r'ph\s+(?:of\s+)?(\d+\.?\d*)|(\d+\.?\d*)\s+ph',
+        message, re.IGNORECASE
+    )
+    if ph_match:
+        val = ph_match.group(1) or ph_match.group(2)
+        if val: inputs["ph"] = float(val)
+
+    # ── Extract rainfall ───────────────────
+    rain_match = re.search(
+        r'(\d+\.?\d*)\s*mm|rainfall\s+(?:of\s+)?(\d+\.?\d*)',
+        message, re.IGNORECASE
+    )
+    if rain_match:
+        val = rain_match.group(1) or rain_match.group(2)
+        if val: inputs["rainfall"] = float(val)
+
+    # ── Extract nitrogen ───────────────────
+    n_match = re.search(
+        r'nitrogen\s+(?:of\s+)?(\d+\.?\d*)|(\d+\.?\d*)\s*kg.*nitrogen',
+        message, re.IGNORECASE
+    )
+    if n_match:
+        val = n_match.group(1) or n_match.group(2)
+        if val: inputs["nitrogen"] = float(val)
+
+    # ── Extract moisture ───────────────────
+    m_match = re.search(
+        r'moisture\s+(?:of\s+)?(\d+\.?\d*)',
+        message, re.IGNORECASE
+    )
+    if m_match:
+        inputs["moisture"] = float(m_match.group(1))
+
+    # ── Extract soil type ──────────────────
+    for soil in VALID_SOILS:
+        if soil.lower() in message.lower():
+            inputs["soil"] = soil
+            break
+
+    return inputs
 
 def build_dataset_context():
     """
@@ -392,26 +561,94 @@ def llm_chat(user_message: str, session_id: str = "default"):
     try:
         # ── Build system prompt with live data ──
         system_prompt = build_system_prompt()
+                # ── Check if prediction question ────────
+        if is_prediction_question(user_message):
+            inputs     = extract_prediction_inputs(user_message)
+            prediction = predict_crop(
+                temp       = inputs["temperature"],
+                moisture   = inputs["moisture"],
+                rainfall   = inputs["rainfall"],
+                ph         = inputs["ph"],
+                nitrogen   = inputs["nitrogen"],
+                phosphorus = inputs["phosphorus"],
+                potassium  = inputs["potassium"],
+                carbon     = inputs["carbon"],
+                soil_type  = inputs["soil"]
+            )
+
+            if prediction.get("status") == "success":
+                top3  = prediction["top_3_crops"]
+                feat  = prediction["feature_importance"]
+
+                # Build readable response
+                crop1 = top3[0]["crop"]
+                crop2 = top3[1]["crop"]
+                crop3 = top3[2]["crop"]
+
+                conf1 = top3[0]["confidence"]
+                conf2 = top3[1]["confidence"]
+                conf3 = top3[2]["confidence"]
+
+                top_feature = list(feat.keys())[0]
+                top_feat_val = list(feat.values())[0]
+
+                response_text = (
+                    f"🌾 **Crop Recommendation Results**\n\n"
+                    f"Based on your conditions "
+                    f"(pH: {inputs['ph']}, "
+                    f"Temp: {inputs['temperature']}°C, "
+                    f"Soil: {inputs['soil']}):\n\n"
+                    f"**Top 3 Recommended Crops:**\n"
+                    f"1. 🥇 **{crop1}** — {conf1}% confidence\n"
+                    f"2. 🥈 **{crop2}** — {conf2}% confidence\n"
+                    f"3. 🥉 **{crop3}** — {conf3}% confidence\n\n"
+                    f"**Most Influential Factor:** "
+                    f"{top_feature} ({top_feat_val}%)\n\n"
+                    f"💡 You can explore this further in the "
+                    f"**Predict tab** for full feature importance details.\n\n"
+                    f"🔄 Dashboard has been filtered to show "
+                    f"**{crop1}** data."
+                )
+
+                # Filter dashboard to top crop
+                detected_filters = {"crop": crop1}
+
+                return {
+                    "response":   response_text,
+                    "filters":    detected_filters,
+                    "has_filter": True,
+                    "prediction": prediction,
+                    "status":     "success"
+                }
                 # ── Automatic filter detection from user message ──
+        # ── Check for reset/clear filter commands first ──
+        reset_filters = detect_reset_filters(user_message)
+        
+        # ── Automatic filter detection from user message ──
         detected_filters = {}
 
-        # Detect crop
-        for crop in VALID_CROPS:
-            if crop.lower() in user_message.lower():
-                detected_filters["crop"] = crop
-                break
+        # If reset detected, use those
+        if reset_filters:
+            detected_filters = reset_filters
+        else:
+            # Detect specific crop
+            for crop in VALID_CROPS:
+                if crop.lower() in user_message.lower():
+                    detected_filters["crop"] = crop
+                    break
 
-        # Detect soil
-        for soil in VALID_SOILS:
-            if soil.lower() in user_message.lower():
-                detected_filters["soil"] = soil
-                break
+            # Detect specific soil
+            for soil in VALID_SOILS:
+                if soil.lower() in user_message.lower():
+                    detected_filters["soil"] = soil
+                    break
 
-        # Detect fertilizer
-        for fert in VALID_FERTILIZERS:
-            if fert.lower() in user_message.lower():
-                detected_filters["fertilizer"] = fert
-                break
+            # Detect specific fertilizer
+            for fert in VALID_FERTILIZERS:
+                if fert.lower() in user_message.lower():
+                    detected_filters["fertilizer"] = fert
+                    break
+                
         # ── Add user message to history ─────────
         conversation_history.append({
             "role": "user",

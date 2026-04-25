@@ -4,8 +4,8 @@ const BASE = "http://localhost:5000/api";
 
 const api = axios.create({ baseURL: BASE, timeout: 10000 });
 
-export const fetchKPIs        = (crop = "all") => api.get(`/kpis?crop=${crop}`).then(r => r.data);
-export const fetchFilters     = () => api.get("/filters").then(r => r.data);
+export const fetchKPIs = (crop = "all", soil = "all") => api.get(`/kpis?crop=${crop}&soil=${soil}`).then(r => r.data);
+export const fetchFilters = (crop = "all", soil = "all") => api.get(`/filters?crop=${crop}&soil=${soil}`).then(r => r.data);
 export const fetchStats       = () => api.get("/stats").then(r => r.data);
 export const fetchSoilDist    = () => api.get("/soil-distribution").then(r => r.data);
 export const fetchCropDist    = () => api.get("/crop-distribution").then(r => r.data);
@@ -54,3 +54,6 @@ export const predictCrop = (data: {
 // ── Feature Importance ────────────────────
 export const fetchFeatureImportance = () =>
   api.get("/feature-importance").then(r => r.data);
+
+export const fetchThresholds = () =>
+  api.get("/thresholds").then(r => r.data);

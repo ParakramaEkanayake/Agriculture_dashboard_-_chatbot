@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, Cell
 } from "recharts";
-import SectionCard from "./SectionCard";
 import { predictCrop, fetchFeatureImportance } from "../services/api";
 
 // ── Valid soil types ───────────────────────
@@ -28,22 +27,26 @@ const DEFAULT_FORM = {
   soil:        "Loamy Soil"
 };
 
-// ── Confidence bar colors ──────────────────
-const CROP_COLORS = ["#16a34a", "#22c55e", "#86efac"];
+// ── Confidence color logic ─────────────────
+function getConfidenceColor(confidence: number): string {
+  if (confidence >= 20) return "#16a34a";   // green — strong
+  if (confidence >= 10) return "#f59e0b";   // amber — moderate
+  return "#94a3b8";                          // gray — low
+}
 
-// ── Feature importance colors ──────────────
-const FEAT_COLORS: Record<string, string> = {
-  Temperature:  "#ef4444",
-  Rainfall:     "#3b82f6",
-  Nitrogen:     "#22c55e",
-  PH:           "#8b5cf6",
-  Phosphorus:   "#f59e0b",
-  Potassium:    "#f97316",
-  Moisture:     "#06b6d4",
-  Carbon:       "#6366f1",
-};
+function getConfidenceBg(confidence: number): string {
+  if (confidence >= 20) return "bg-green-50 border-green-200";
+  if (confidence >= 10) return "bg-amber-50 border-amber-200";
+  return "bg-gray-50 border-gray-200";
+}
 
-// ── Crop emojis ────────────────────────────
+function getConfidenceLabel(confidence: number): string {
+  if (confidence >= 20) return "Strong Match";
+  if (confidence >= 10) return "Moderate Match";
+  return "Low Match";
+}
+
+// ── Crop emoji helper ──────────────────────
 function getCropEmoji(crop: string): string {
   const map: Record<string, string> = {
     rice: "🌾", wheat: "🌾", maize: "🌽",
@@ -56,10 +59,10 @@ function getCropEmoji(crop: string): string {
   return map[crop.toLowerCase()] ?? "🌱";
 }
 
-// ─────────────────────────────────────────────
-//  PredictTab Component
-// ─────────────────────────────────────────────
+// ── Feature importance bar color ───────────
+const FEAT_BAR_COLOR = "#94a3b8"; // desaturated gray-blue
 
+// ─────────────────────────────────────────────
 const PredictTab: React.FC<{ backendOnline: boolean }> = ({ backendOnline }) => {
   const [form,           setForm]           = useState(DEFAULT_FORM);
   const [result,         setResult]         = useState<any>(null);
@@ -82,7 +85,7 @@ const PredictTab: React.FC<{ backendOnline: boolean }> = ({ backendOnline }) => 
     }
   }, [backendOnline]);
 
-  // ── Handle form input change ───────────────
+  // ── Handle form change ─────────────────────
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -108,7 +111,6 @@ const PredictTab: React.FC<{ backendOnline: boolean }> = ({ backendOnline }) => 
         setError(res.error);
       } else {
         setResult(res);
-        // Update feature importance from result
         if (res.feature_importance) {
           const arr = Object.entries(res.feature_importance).map(
             ([name, value]) => ({ name, value: value as number })
@@ -123,261 +125,368 @@ const PredictTab: React.FC<{ backendOnline: boolean }> = ({ backendOnline }) => 
     }
   };
 
-  // ── Input field config ─────────────────────
-  const inputFields = [
-    { name: "temperature", label: "Temperature",  unit: "°C",    min: 0,   max: 60,  step: 0.1 },
-    { name: "moisture",    label: "Moisture",     unit: "0-1",   min: 0,   max: 1,   step: 0.01 },
-    { name: "rainfall",    label: "Rainfall",     unit: "mm",    min: 0,   max: 500, step: 1 },
-    { name: "ph",          label: "Soil pH",      unit: "pH",    min: 0,   max: 14,  step: 0.1 },
-    { name: "nitrogen",    label: "Nitrogen",     unit: "kg/ha", min: 0,   max: 200, step: 1 },
-    { name: "phosphorus",  label: "Phosphorus",   unit: "kg/ha", min: 0,   max: 300, step: 1 },
-    { name: "potassium",   label: "Potassium",    unit: "kg/ha", min: 0,   max: 300, step: 1 },
-    { name: "carbon",      label: "Org. Carbon",  unit: "",      min: -2,  max: 5,   step: 0.1 },
+  // ── Input field definitions ────────────────
+  const soilNutrientFields = [
+    { name: "nitrogen",   label: "Nitrogen",    unit: "kg/ha", placeholder: "e.g., 40",  min: 0,  max: 200, step: 1 },
+    { name: "phosphorus", label: "Phosphorus",  unit: "kg/ha", placeholder: "e.g., 60",  min: 0,  max: 300, step: 1 },
+    { name: "potassium",  label: "Potassium",   unit: "kg/ha", placeholder: "e.g., 40",  min: 0,  max: 300, step: 1 },
+    { name: "ph",         label: "pH Level",    unit: "pH",    placeholder: "e.g., 6.5", min: 0,  max: 14,  step: 0.1 },
+    { name: "carbon",     label: "Org. Carbon", unit: "",      placeholder: "e.g., 1.2", min: -2, max: 5,   step: 0.1 },
   ];
+
+  const climateFields = [
+    { name: "temperature", label: "Temperature", unit: "°C",  placeholder: "e.g., 25",  min: 0,  max: 60,  step: 0.1 },
+    { name: "moisture",    label: "Moisture",     unit: "0-1", placeholder: "e.g., 0.6", min: 0,  max: 1,   step: 0.01 },
+    { name: "rainfall",    label: "Rainfall",     unit: "mm",  placeholder: "e.g., 150", min: 0,  max: 500, step: 1 },
+  ];
+
+  // ── Render input field ─────────────────────
+  const renderField = (field: typeof soilNutrientFields[0]) => (
+    <div key={field.name} className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        {field.label}
+      </label>
+      <div className="relative">
+        <input
+          type="number"
+          name={field.name}
+          value={form[field.name as keyof typeof form]}
+          onChange={handleChange}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          placeholder={field.placeholder}
+          className="w-full border border-gray-150 rounded-lg px-3 py-2.5 text-sm font-mono text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent pr-12 bg-white"
+        />
+        {field.unit && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium">
+            {field.unit}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
 
-      {/* ── Header ────────────────────────────── */}
-      <div className="bg-gradient-to-r from-green-700 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
-        <h2 className="text-2xl font-black">🌾 Crop Recommendation Engine</h2>
-        <p className="text-green-100 mt-1 text-sm">
-          Enter your farm's environmental and soil conditions to get
-          AI-powered crop recommendations.
-        </p>
-        <div className="mt-3 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-          <span className="text-xs text-green-200">
-            Powered by Random Forest Model • Trained on {" "}
-            <strong>Agriculture Dataset</strong>
-          </span>
-        </div>
-      </div>
+      {/* ── Two Column Layout ──────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      {/* ── Input Form ────────────────────────── */}
-      <SectionCard
-        title="Farm Conditions Input"
-        subtitle="Enter your current soil and environmental measurements"
-      >
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
-          {inputFields.map(field => (
-            <div key={field.name} className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                {field.label}
-                {field.unit && (
-                  <span className="ml-1 text-gray-400 normal-case">
-                    ({field.unit})
-                  </span>
-                )}
-              </label>
-              <input
-                type="number"
-                name={field.name}
-                value={form[field.name as keyof typeof form]}
-                onChange={handleChange}
-                min={field.min}
-                max={field.max}
-                step={field.step}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300 font-mono"
-              />
+        {/* ═══════════════════════════════════
+            LEFT: Input Form (7 cols)
+        ═══════════════════════════════════ */}
+        <div className="lg:col-span-7 space-y-6">
+
+          {/* Form card */}
+          <div className="bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
+
+            {/* Title */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-gray-800">
+                🌾 Crop Recommendation Engine
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                Enter your farm's environmental and soil conditions to receive
+                AI-powered crop recommendations.
+              </p>
             </div>
-          ))}
 
-          {/* Soil Type Dropdown */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Soil Type
-            </label>
-            <select
-              name="soil"
-              value={form.soil}
-              onChange={handleChange}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300"
-            >
-              {SOIL_TYPES.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+            {/* ── Group 1: Soil & Nutrients ──── */}
+            <div className="mb-6">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+                Soil & Nutrients
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {soilNutrientFields.map(renderField)}
+                {/* Soil dropdown */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Soil Type
+                  </label>
+                  <select
+                    name="soil"
+                    value={form.soil}
+                    onChange={handleChange}
+                    className="w-full border border-gray-150 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-transparent bg-white"
+                  >
+                    {SOIL_TYPES.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
 
-        {/* Predict Button */}
-        <div className="mt-6 flex items-center gap-4">
-          <button
-            onClick={handlePredict}
-            disabled={loading || !backendOnline}
-            className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all text-sm"
-          >
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Predicting...
-              </>
-            ) : (
-              <>🌾 Predict Best Crop</>
+            {/* ── Divider ────────────────────── */}
+            <div className="h-px bg-gray-100 my-2" />
+
+            {/* ── Group 2: Climate Conditions ── */}
+            <div className="mb-6 mt-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+                Climate Conditions
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {climateFields.map(renderField)}
+              </div>
+            </div>
+
+            {/* ── Action Buttons ─────────────── */}
+            <div className="flex items-center gap-3 mt-4">
+              <button
+                onClick={handlePredict}
+                disabled={loading || !backendOnline}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-8 py-3 rounded-xl shadow-[0_4px_12px_rgba(22,163,74,0.35)] hover:shadow-[0_6px_16px_rgba(22,163,74,0.45)] transition-all text-sm"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>🌾 Predict Optimal Crop</>
+                )}
+              </button>
+              <button
+                onClick={() => { setForm(DEFAULT_FORM); setResult(null); setError(""); }}
+                className="px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition font-medium"
+              >
+                Reset
+              </button>
+              {!backendOnline && (
+                <p className="text-xs text-amber-600 font-semibold ml-2">
+                  ⚠️ Backend must be online
+                </p>
+              )}
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="mt-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+                ⚠️ {error}
+              </div>
             )}
-          </button>
+          </div>
 
-          <button
-            onClick={() => { setForm(DEFAULT_FORM); setResult(null); setError(""); }}
-            className="px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition"
-          >
-            Reset
-          </button>
-
-          {!backendOnline && (
-            <p className="text-xs text-amber-600 font-semibold">
-              ⚠️ Backend must be online for predictions
+          {/* ── Model Info Badge ──────────────── */}
+          <div className="flex items-center gap-2 px-4">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <p className="text-[10px] text-gray-400">
+              Powered by Random Forest Classifier · Trained on Agriculture Dataset · 60% accuracy across 33 crop classes
             </p>
-          )}
+          </div>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-            ⚠️ {error}
-          </div>
-        )}
-      </SectionCard>
+        {/* ═══════════════════════════════════
+            RIGHT: Results Panel (5 cols)
+        ═══════════════════════════════════ */}
+        <div className="lg:col-span-5 space-y-6">
 
-      {/* ── Results ───────────────────────────── */}
-      {result && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* ── No results state ──────────────── */}
+          {!result && !loading && (
+            <div className="bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-gray-100 p-8 text-center">
+              <span className="text-5xl mb-4 block">🌱</span>
+              <h3 className="text-base font-bold text-gray-700">
+                Ready to Predict
+              </h3>
+              <p className="text-xs text-gray-400 mt-2 max-w-xs mx-auto leading-relaxed">
+                Fill in the soil and climate conditions on the left,
+                then click <b>"Predict Optimal Crop"</b> to see recommendations.
+              </p>
+            </div>
+          )}
 
-          {/* Top 3 Crops */}
-          <SectionCard
-            title="🏆 Top 3 Recommended Crops"
-            subtitle="Based on your farm conditions"
-          >
-            <div className="space-y-4 mt-2">
-              {result.top_3_crops.map((item: any, idx: number) => (
-                <div key={idx} className={`rounded-xl p-4 border ${
-                  idx === 0
-                    ? "bg-green-50 border-green-200"
-                    : idx === 1
-                    ? "bg-emerald-50 border-emerald-100"
-                    : "bg-gray-50 border-gray-100"
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">
-                        {getCropEmoji(item.crop)}
+          {/* ── Loading state ─────────────────── */}
+          {loading && (
+            <div className="bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-gray-100 p-8 text-center">
+              <div className="w-10 h-10 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-sm text-gray-500 font-medium">
+                Analyzing soil conditions...
+              </p>
+            </div>
+          )}
+
+          {/* ── Results ───────────────────────── */}
+          {result && (
+            <>
+              {/* Top prediction */}
+              <div className="bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
+                  Top Prediction
+                </p>
+                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-4xl">
+                        {getCropEmoji(result.top_3_crops[0].crop)}
                       </span>
                       <div>
-                        <p className={`font-bold text-sm capitalize ${
-                          idx === 0 ? "text-green-800" : "text-gray-700"
-                        }`}>
-                          {idx === 0 && "⭐ "}
-                          {item.crop}
+                        <p className="text-xl font-black text-green-800 capitalize">
+                          {result.top_3_crops[0].crop}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          Rank #{idx + 1} recommendation
+                        <p className="text-xs text-green-600 font-medium mt-0.5">
+                          Best match for your conditions
                         </p>
                       </div>
                     </div>
-                    <span className={`text-lg font-black ${
-                      idx === 0 ? "text-green-700" : "text-gray-600"
-                    }`}>
-                      {item.confidence}%
-                    </span>
-                  </div>
-                  {/* Confidence bar */}
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-2 rounded-full transition-all duration-700"
-                      style={{
-                        width: `${Math.min(item.confidence * 4, 100)}%`,
-                        background: CROP_COLORS[idx]
-                      }}
-                    />
+                    <div className="text-right">
+                      <p className="text-3xl font-black text-green-700">
+                        {result.top_3_crops[0].confidence}%
+                      </p>
+                      <p className="text-[10px] text-green-500 font-semibold uppercase">
+                        Confidence
+                      </p>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {/* Disclaimer */}
-            <p className="text-xs text-gray-400 mt-4">
-              * Confidence scores are relative probabilities from the
-              Random Forest model trained on {" "}
-              <strong>Agriculture_dataset.csv</strong>
-            </p>
-          </SectionCard>
-
-          {/* Feature Importance from result */}
-          <SectionCard
-            title="📊 Feature Importance"
-            subtitle="What influenced this prediction the most?"
-          >
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart
-                data={featImportance}
-                layout="vertical"
-                margin={{ top: 5, right: 40, left: 80, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 10 }}
-                  tickFormatter={v => `${v}%`}
-                />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  tick={{ fontSize: 11 }}
-                  width={80}
-                />
-                <Tooltip formatter={(v: any) => [`${v}%`, "Importance"]} />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                  {featImportance.map((entry) => (
-                    <Cell
-                      key={entry.name}
-                      fill={FEAT_COLORS[entry.name] ?? "#22c55e"}
-                    />
+              {/* Alternative options */}
+              <div className="bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
+                  Alternative Options
+                </p>
+                <div className="space-y-3">
+                  {result.top_3_crops.slice(1).map((item: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className={`rounded-xl border p-4 ${getConfidenceBg(item.confidence)}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">
+                            {getCropEmoji(item.crop)}
+                          </span>
+                          <div>
+                            <p className="text-sm font-bold text-gray-700 capitalize">
+                              {item.crop}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {getConfidenceLabel(item.confidence)}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-lg font-black" style={{ color: getConfidenceColor(item.confidence) }}>
+                          {item.confidence}%
+                        </span>
+                      </div>
+                      {/* Confidence bar */}
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-1.5 rounded-full transition-all duration-700"
+                          style={{
+                            width: `${Math.min(item.confidence * 4, 100)}%`,
+                            backgroundColor: getConfidenceColor(item.confidence)
+                          }}
+                        />
+                      </div>
+                    </div>
                   ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </SectionCard>
-        </div>
-      )}
+                </div>
+              </div>
 
-      {/* ── Feature Importance (always visible) ── */}
-      {featImportance.length > 0 && !result && (
-        <SectionCard
-          title="📊 Global Feature Importance"
-          subtitle="Which factors influence crop selection the most? (from trained model)"
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={featImportance}
-              layout="vertical"
-              margin={{ top: 5, right: 40, left: 80, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis
-                type="number"
-                tick={{ fontSize: 10 }}
-                tickFormatter={v => `${v}%`}
-              />
-              <YAxis
-                dataKey="name"
-                type="category"
-                tick={{ fontSize: 11 }}
-                width={80}
-              />
-              <Tooltip formatter={(v: any) => [`${v}%`, "Importance"]} />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                {featImportance.map((entry) => (
-                  <Cell
-                    key={entry.name}
-                    fill={FEAT_COLORS[entry.name] ?? "#22c55e"}
+              {/* Feature importance */}
+              {featImportance.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                    Feature Influence
+                  </p>
+                  <p className="text-[10px] text-gray-400 mb-4">
+                    What influenced this prediction the most?
+                  </p>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart
+                      data={featImportance}
+                      layout="vertical"
+                      margin={{ top: 0, right: 40, left: 70, bottom: 0 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis
+                        dataKey="name"
+                        type="category"
+                        tick={{ fontSize: 11, fill: "#6b7280" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={70}
+                      />
+                      <Tooltip
+                        formatter={(v: any) => [`${v}%`, "Importance"]}
+                        contentStyle={{
+                          borderRadius: 12,
+                          border: "1px solid #e5e7eb",
+                          fontSize: 12,
+                        }}
+                      />
+                      <Bar
+                        dataKey="value"
+                        radius={[0, 6, 6, 0]}
+                        barSize={16}
+                      >
+                        {featImportance.map((entry) => (
+                          <Cell
+                            key={entry.name}
+                            fill={FEAT_BAR_COLOR}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Feature importance (before prediction) ── */}
+          {!result && !loading && featImportance.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-gray-100 p-6">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                Global Feature Influence
+              </p>
+              <p className="text-[10px] text-gray-400 mb-4">
+                Which factors influence crop selection the most?
+              </p>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart
+                  data={featImportance}
+                  layout="vertical"
+                  margin={{ top: 0, right: 40, left: 70, bottom: 0 }}
+                >
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tick={{ fontSize: 11, fill: "#6b7280" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={70}
                   />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </SectionCard>
-      )}
+                  <Tooltip
+                    formatter={(v: any) => [`${v}%`, "Importance"]}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid #e5e7eb",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar
+                    dataKey="value"
+                    radius={[0, 6, 6, 0]}
+                    barSize={16}
+                  >
+                    {featImportance.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={FEAT_BAR_COLOR}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 };

@@ -57,3 +57,6 @@ export const fetchFeatureImportance = () =>
 
 export const fetchThresholds = () =>
   api.get("/thresholds").then(r => r.data);
+
+export const fetchCropSoilMapping = () =>
+  api.get("/crop-soil-mapping").then(r => r.data);

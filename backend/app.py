@@ -725,6 +725,27 @@ def thresholds():
 
     return jsonify(result)
 
+@app.route("/api/crop-soil-mapping")
+def crop_soil_mapping():
+    """
+    Returns which crops exist in which soils
+    and which soils have which crops.
+    """
+    # Crops per soil
+    crops_per_soil = {}
+    for soil in df["Soil"].unique():
+        crops_per_soil[soil] = sorted(df[df["Soil"] == soil]["Crop"].unique().tolist())
+
+    # Soils per crop
+    soils_per_crop = {}
+    for crop in df["Crop"].unique():
+        soils_per_crop[crop] = sorted(df[df["Crop"] == crop]["Soil"].unique().tolist())
+
+    return jsonify({
+        "crops_per_soil": crops_per_soil,
+        "soils_per_crop": soils_per_crop,
+    })
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
 

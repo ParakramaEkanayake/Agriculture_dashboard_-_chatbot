@@ -115,7 +115,7 @@ function App() {
   const [globalToDate, setGlobalToDate] = useState("2026-01-30");
   const [thresholds, setThresholds] = useState<any>(null);
   const [customThresholds, setCustomThresholds] = useState<any>(null);
-  const [showThresholds, setShowThresholds] = useState(false);
+  // const [showThresholds, setShowThresholds] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [checking, setChecking] = useState(true);

@@ -259,24 +259,42 @@ def rainfall_nitrogen():
 @app.route("/api/kpis")
 def kpis():
     crop = request.args.get("crop", "all")
-    filtered_df = df[df["Crop"] == crop] if crop != "all" else df
+    soil = request.args.get("soil", "all")
+
+    # Filtered dataset
+    filtered_df = df.copy()
+    if crop != "all":
+        filtered_df = filtered_df[filtered_df["Crop"] == crop]
+    if soil != "all":
+        filtered_df = filtered_df[filtered_df["Soil"] == soil]
+
+    # Overall dataset (for comparison)
+    overall_df = df.copy()
 
     def get_metric_stats(col):
         if len(filtered_df) == 0:
             return {"latest": None, "change_pct": 0, "change_dir": "neutral"}
-        latest = round(float(filtered_df[col].iloc[-1]), 2 if col != "Moisture" else 4)
-        if len(filtered_df) > 1:
-            previous = round(float(filtered_df[col].iloc[-2]), 2 if col != "Moisture" else 4)
-            if previous != 0:
-                pct = round(((latest - previous) / previous) * 100, 2)
-                direction = "up" if pct > 0 else "down" if pct < 0 else "neutral"
-            else:
-                pct = 0
-                direction = "neutral"
+
+        # Current = average of filtered data
+        current_avg = round(float(filtered_df[col].mean()), 2 if col != "Moisture" else 4)
+
+        # Overall = average of entire dataset
+        overall_avg = round(float(overall_df[col].mean()), 2 if col != "Moisture" else 4)
+
+        # % difference from overall average
+        if overall_avg != 0:
+            pct = round(((current_avg - overall_avg) / overall_avg) * 100, 2)
+            direction = "up" if pct > 0 else "down" if pct < 0 else "neutral"
         else:
             pct = 0
             direction = "neutral"
-        return {"latest": latest, "change_pct": pct, "change_dir": direction}
+
+        return {
+            "latest": current_avg,
+            "change_pct": pct,
+            "change_dir": direction,
+            "overall_avg": overall_avg
+        }
 
     return jsonify({
         "total_records":      len(filtered_df),
@@ -285,25 +303,47 @@ def kpis():
         "nitrogen":           get_metric_stats("Nitrogen"),
         "phosphorus":         get_metric_stats("Phosphorus"),
         "potassium":          get_metric_stats("Potassium"),
-        "avg_temperature":    round(float(filtered_df["Temperature"].mean()), 2),
-        "avg_moisture":       round(float(filtered_df["Moisture"].mean()), 4),
-        "avg_ph":             round(float(filtered_df["PH"].mean()), 2),
-        "avg_nitrogen":       round(float(filtered_df["Nitrogen"].mean()), 2),
+        "avg_temperature":    round(float(filtered_df["Temperature"].mean()), 2) if len(filtered_df) > 0 else 0,
+        "avg_moisture":       round(float(filtered_df["Moisture"].mean()), 4) if len(filtered_df) > 0 else 0,
+        "avg_ph":             round(float(filtered_df["PH"].mean()), 2) if len(filtered_df) > 0 else 0,
+        "avg_nitrogen":       round(float(filtered_df["Nitrogen"].mean()), 2) if len(filtered_df) > 0 else 0,
         "dominant_soil":      filtered_df["Soil"].value_counts().idxmax() if len(filtered_df) > 0 else None,
         "dominant_crop":      filtered_df["Crop"].value_counts().idxmax() if len(filtered_df) > 0 else None,
         "dominant_fertilizer":filtered_df["Fertilizer"].value_counts().idxmax() if len(filtered_df) > 0 else None,
-        "soil_types":         int(filtered_df["Soil"].nunique()),
-        "crop_types":         int(filtered_df["Crop"].nunique()),
-        "fertilizer_types":   int(filtered_df["Fertilizer"].nunique()),
+        "soil_types":         int(filtered_df["Soil"].nunique()) if len(filtered_df) > 0 else 0,
+        "crop_types":         int(filtered_df["Crop"].nunique()) if len(filtered_df) > 0 else 0,
+        "fertilizer_types":   int(filtered_df["Fertilizer"].nunique()) if len(filtered_df) > 0 else 0,
     })
 
 # ── Filter options ────────────────────────────
 @app.route("/api/filters")
 def filters():
+    crop = request.args.get("crop", "all")
+    soil = request.args.get("soil", "all")
+
+    filtered = df.copy()
+
+    # Get all crops (unfiltered)
+    all_crops = sorted(df["Crop"].unique().tolist())
+
+    # Get soils available for selected crop
+    if crop != "all":
+        crop_filtered = df[df["Crop"] == crop]
+        available_soils = sorted(crop_filtered["Soil"].unique().tolist())
+    else:
+        available_soils = sorted(df["Soil"].unique().tolist())
+
+    # Get fertilizers available for selected crop + soil
+    if crop != "all":
+        filtered = filtered[filtered["Crop"] == crop]
+    if soil != "all":
+        filtered = filtered[filtered["Soil"] == soil]
+    available_fertilizers = sorted(filtered["Fertilizer"].unique().tolist())
+
     return jsonify({
-        "soils":       sorted(df["Soil"].unique().tolist()),
-        "crops":       sorted(df["Crop"].unique().tolist()),
-        "fertilizers": sorted(df["Fertilizer"].unique().tolist()),
+        "crops":       all_crops,
+        "soils":       available_soils,
+        "fertilizers": available_fertilizers,
     })
 
 # ══════════════════════════════════════════════
@@ -655,6 +695,34 @@ def feature_importance_endpoint():
     Used for the dashboard chart.
     """
     result = get_feature_importance()
+    return jsonify(result)
+
+@app.route("/api/thresholds")
+def thresholds():
+    """
+    Calculate threshold ranges from dataset statistics.
+    Normal  = Mean ± 1 Std
+    Warning = Mean ± 1.5 Std
+    Critical = Beyond ± 2 Std
+    """
+    numeric_cols = ["Temperature", "Moisture", "Rainfall", "PH",
+                    "Nitrogen", "Phosphorus", "Potassium", "Carbon"]
+
+    result = {}
+    for col in numeric_cols:
+        mean = float(df[col].mean())
+        std  = float(df[col].std())
+
+        result[col] = {
+            "mean":     round(mean, 4),
+            "std":      round(std, 4),
+            "min":      round(float(df[col].min()), 4),
+            "max":      round(float(df[col].max()), 4),
+            "normal":   {"low": round(mean - std, 4),     "high": round(mean + std, 4)},
+            "warning":  {"low": round(mean - 1.5*std, 4), "high": round(mean + 1.5*std, 4)},
+            "critical": {"low": round(mean - 2*std, 4),   "high": round(mean + 2*std, 4)},
+        }
+
     return jsonify(result)
 
 if __name__ == "__main__":

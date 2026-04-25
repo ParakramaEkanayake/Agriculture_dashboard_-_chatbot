@@ -1,4 +1,5 @@
 from llm_chat import llm_chat, reset_conversation
+from crop_model import predict_crop, get_feature_importance
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd
@@ -606,6 +607,55 @@ def chat():
     response = chatbot_response(query)
     return jsonify({"response": response, "query": query})
 
+# ═══════════════════════════════════════════════
+#  CROP RECOMMENDATION ENDPOINTS
+# ═══════════════════════════════════════════════
+
+@app.route("/api/predict-crop", methods=["POST"])
+def predict_crop_endpoint():
+    """
+    Predicts top 3 crops based on 
+    environmental and soil conditions.
+    """
+    data = request.get_json(force=True)
+
+    required = [
+        "temperature", "moisture", "rainfall",
+        "ph", "nitrogen", "phosphorus",
+        "potassium", "carbon", "soil"
+    ]
+
+    # Check all required fields present
+    missing = [f for f in required if f not in data]
+    if missing:
+        return jsonify({
+            "error": f"Missing fields: {missing}"
+        }), 400
+
+    result = predict_crop(
+        temp        = float(data["temperature"]),
+        moisture    = float(data["moisture"]),
+        rainfall    = float(data["rainfall"]),
+        ph          = float(data["ph"]),
+        nitrogen    = float(data["nitrogen"]),
+        phosphorus  = float(data["phosphorus"]),
+        potassium   = float(data["potassium"]),
+        carbon      = float(data["carbon"]),
+        soil_type   = data["soil"]
+    )
+
+    return jsonify(result)
+
+
+@app.route("/api/feature-importance", methods=["GET"])
+def feature_importance_endpoint():
+    """
+    Returns feature importance from 
+    the trained Random Forest model.
+    Used for the dashboard chart.
+    """
+    result = get_feature_importance()
+    return jsonify(result)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

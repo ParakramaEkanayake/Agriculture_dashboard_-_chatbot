@@ -595,7 +595,16 @@ function App() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <ChatBot backendOnline={backendOnline} onFilterChange={handleAIFilterChange} />
+            <ChatBot
+              backendOnline={backendOnline}
+              onFilterChange={handleAIFilterChange}
+              onTabChange={(tab: string) => {
+                if (tab === "predict") setActiveTab("predict");
+                if (tab === "overview") setActiveTab("overview");
+                if (tab === "nutrients") setActiveTab("nutrients");
+                if (tab === "thresholds") setActiveTab("thresholds");
+              }}
+            />
           </div>
         )}
       </div>

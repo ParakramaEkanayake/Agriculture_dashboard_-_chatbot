@@ -151,9 +151,11 @@ def is_prediction_question(message: str) -> bool:
         "what can i grow",
         "crop recommendation",
         "what to grow",
-        "which plant"
+        "which plant",
+        "what crop suits",
+        "crop for",
+        "predict for",
     ]
-
     message_lower = message.lower()
     return any(keyword in message_lower for keyword in prediction_keywords)
 

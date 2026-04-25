@@ -27,18 +27,33 @@ function offlineBot(q: string): string {
   return "🤔 I'm running in offline mode. Try asking about temperature, moisture, pH, nitrogen, soil types, crops, or fertilizers!";
 }
 
-function formatText(text: string): React.ReactNode {
+function formatText(text: string, onTabChange?: (tab: string) => void): React.ReactNode {
   const lines = text.split("\n");
   return (
     <div className="space-y-1">
       {lines.map((line, i) => {
+        // Detect predict tab link
+        if (line.includes("Predict tab") && line.includes("💡")) {
+          return (
+            <div key={i} className="mt-2 space-y-1">
+              <p className="text-xs text-gray-500 italic">{line.replace(/[*]/g, "")}</p>
+              <button
+                onClick={() => onTabChange?.("predict")}
+                className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-green-700 transition"
+              >
+                🌾 Open Predict Tab →
+              </button>
+            </div>
+          );
+        }
+
         // Bold markdown **text**
         const parts = line.split(/(\*\*[^*]+\*\*)/g);
         return (
           <p key={i} className={line.startsWith("•") || line.startsWith("-") ? "ml-2" : ""}>
             {parts.map((part, j) =>
               part.startsWith("**") && part.endsWith("**")
-                ? <strong key={j} className="font-bold">{part.slice(2, -2)}</strong>
+                ? <strong key={j} className="font-bold">{part.slice(2,-2)}</strong>
                 : part
             )}
           </p>
@@ -47,6 +62,7 @@ function formatText(text: string): React.ReactNode {
     </div>
   );
 }
+
 const QUICK_PROMPTS_CLASSIC = [
   "What is the average pH?",
   "Which crop needs the most nitrogen?",
@@ -59,14 +75,6 @@ const QUICK_PROMPTS_CLASSIC = [
 ];
 
 const QUICK_PROMPTS_AI_GROUPS = [
-  {
-    title: "Overview & Insights",
-    prompts: [
-      "What is the average pH?",
-      "Show me key statistics",
-      "Which crop needs the most nitrogen?",
-    ],
-  },
   {
     title: "Comparisons & Trends",
     prompts: [
@@ -87,8 +95,17 @@ const QUICK_PROMPTS_AI_GROUPS = [
     title: "Prediction & Decision Support",
     prompts: [
       "What should I grow in Loamy Soil at 25°C with pH 6.5?",
+      "Predict crop for Acidic Soil with 30°C and nitrogen 50",
+      "Best crop for high rainfall 300mm in Neutral Soil?",
+      "What crop suits moisture 0.7, pH 5.5, Peaty Soil?",
       "Recommend fertilizer for low pH",
-      "Which crop is best for acidic soil?",
+    ],
+  }, {
+    title: "Overview & Insights",
+    prompts: [
+      "What is the average pH?",
+      "Show me key statistics",
+      "Which crop needs the most nitrogen?",
     ],
   },
 ];
@@ -96,7 +113,8 @@ const QUICK_PROMPTS_AI_GROUPS = [
 const ChatBot: React.FC<{
   backendOnline: boolean;
   onFilterChange?: (filters: any) => void;
-}> = ({ backendOnline, onFilterChange }) => {
+  onTabChange?: (tab: string) => void;
+}> = ({ backendOnline, onFilterChange, onTabChange }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 0,
@@ -139,6 +157,7 @@ const ChatBot: React.FC<{
               top3.map((c: any, i: number) =>
                 `${i + 1}. ${c.crop} — ${c.confidence}%`
               ).join("\n");
+            botText += `\n\n💡 *Open the Predict tab for detailed analysis with feature importance chart.*`;
           }
 
           // ── Apply dashboard filters if detected ──
@@ -262,7 +281,7 @@ const ChatBot: React.FC<{
                   ? "bg-gray-50/80 border border-gray-100/50 text-gray-800 rounded-tl-sm"
                   : "bg-linear-to-br from-green-600 to-emerald-600 text-white rounded-tr-sm"
                   }`}>
-                  {formatText(msg.text)}
+                  {formatText(msg.text, onTabChange)}
                 </div>
                 <span className="text-xs text-gray-400 px-1">{msg.time}</span>
               </div>

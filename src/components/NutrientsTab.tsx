@@ -59,17 +59,17 @@ const THRESHOLD_COLORS = {
 const SUB_TABS = [
   {
     id: "npk",
-    label: "🌿 NPK Analysis",
+    label: "NPK Analysis",
     desc: "Nitrogen, Phosphorus, and Potassium comparison across crops and soils",
   },
   {
     id: "soil",
-    label: "🏔️ Soil Profiles",
+    label: "Soil Profiles",
     desc: "Soil-specific nutrient profiles, carbon levels, and radar comparison",
   },
   {
     id: "distribution",
-    label: "📊 Distributions",
+    label: "Distributions",
     desc: "Frequency distributions and rainfall-nutrient relationships",
   },
 ];

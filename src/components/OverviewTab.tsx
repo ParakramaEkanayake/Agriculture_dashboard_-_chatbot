@@ -4,6 +4,7 @@ import {
   LineChart, Line, ReferenceArea,
 } from "recharts";
 import SectionCard from "./SectionCard";
+import { getMetricColorStyle } from "../utils/metricColors";
 import { fetchData } from "../services/api";
 import { mockTableData } from "../services/mockData";
 
@@ -27,40 +28,40 @@ interface ThresholdData {
 const CHART_GROUPS = [
   {
     id: "environmental",
-    label: "🌡️ Environmental",
+    label: "Environmental",
     fullLabel: "Environmental Conditions",
     desc: "Temperature, moisture, and rainfall patterns",
     color: "border-green-600 bg-green-50 text-green-700",
     inactive: "border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50/50",
     metrics: [
-      { key: "Temperature", label: "Temperature (°C)", lineColor: "#374151" },
-      { key: "Moisture",    label: "Moisture (0-1)",    lineColor: "#374151" },
-      { key: "Rainfall",    label: "Rainfall (mm)",     lineColor: "#374151" },
+      { key: "Temperature", label: "Temperature (°C)" },
+      { key: "Moisture",    label: "Moisture (0-1)" },
+      { key: "Rainfall",    label: "Rainfall (mm)" },
     ],
   },
   {
     id: "soilhealth",
-    label: "🧪 Soil Health",
+    label: "Soil Health",
     fullLabel: "Soil Health Indicators",
     desc: "pH levels and organic carbon content",
     color: "border-green-600 bg-green-50 text-green-700",
     inactive: "border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50/50",
     metrics: [
-      { key: "PH",     label: "Soil pH",       lineColor: "#374151" },
-      { key: "Carbon", label: "Organic Carbon", lineColor: "#374151" },
+      { key: "PH",     label: "Soil pH" },
+      { key: "Carbon", label: "Organic Carbon" },
     ],
   },
   {
     id: "nutrients",
-    label: "🌿 Nutrients (NPK)",
+    label: "Nutrients (NPK)",
     fullLabel: "Nutrient Levels (NPK)",
     desc: "Nitrogen, phosphorus, and potassium over time",
     color: "border-green-600 bg-green-50 text-green-700",
     inactive: "border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50/50",
     metrics: [
-      { key: "Nitrogen",   label: "Nitrogen (kg/ha)",   lineColor: "#374151" },
-      { key: "Phosphorus", label: "Phosphorus (kg/ha)", lineColor: "#374151" },
-      { key: "Potassium",  label: "Potassium (kg/ha)",  lineColor: "#374151" },
+      { key: "Nitrogen",   label: "Nitrogen (kg/ha)" },
+      { key: "Phosphorus", label: "Phosphorus (kg/ha)" },
+      { key: "Potassium",  label: "Potassium (kg/ha)" },
     ],
   },
 ];
@@ -219,6 +220,7 @@ const OverviewTab: React.FC<{
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {currentGroup.metrics.map(metric => {
           const zones = getThresholdZones(metric.key);
+          const metricStyle = getMetricColorStyle(metric.key);
 
           return (
             <SectionCard
@@ -308,7 +310,7 @@ const OverviewTab: React.FC<{
                   <Line
                     type="monotone"
                     dataKey={metric.key}
-                    stroke={metric.lineColor}
+                    stroke={metricStyle.lineColor}
                     strokeWidth={2}
                     dot={false}
                     activeDot={{ r: 5, strokeWidth: 2 }}

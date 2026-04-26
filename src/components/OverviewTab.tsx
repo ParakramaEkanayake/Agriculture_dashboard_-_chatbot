@@ -19,8 +19,8 @@ interface ThresholdData {
   std: number;
   min: number;
   max: number;
-  normal:   ThresholdRange;
-  warning:  ThresholdRange;
+  normal: ThresholdRange;
+  warning: ThresholdRange;
   critical: ThresholdRange;
 }
 
@@ -31,12 +31,12 @@ const CHART_GROUPS = [
     label: "Environmental",
     fullLabel: "Environmental Conditions",
     desc: "Temperature, moisture, and rainfall patterns",
-    color: "border-green-600 bg-green-50 text-green-700",
-    inactive: "border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50/50",
+    color: "border-cyan-600 bg-cyan-600 text-white shadow-sm",
+    inactive: "border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700",
     metrics: [
       { key: "Temperature", label: "Temperature (°C)" },
-      { key: "Moisture",    label: "Moisture (0-1)" },
-      { key: "Rainfall",    label: "Rainfall (mm)" },
+      { key: "Moisture", label: "Moisture (0-1)" },
+      { key: "Rainfall", label: "Rainfall (mm)" },
     ],
   },
   {
@@ -44,10 +44,10 @@ const CHART_GROUPS = [
     label: "Soil Health",
     fullLabel: "Soil Health Indicators",
     desc: "pH levels and organic carbon content",
-    color: "border-green-600 bg-green-50 text-green-700",
-    inactive: "border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50/50",
+    color: "border-cyan-600 bg-cyan-600 text-white shadow-sm",
+    inactive: "border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700",
     metrics: [
-      { key: "PH",     label: "Soil pH" },
+      { key: "PH", label: "Soil pH" },
       { key: "Carbon", label: "Organic Carbon" },
     ],
   },
@@ -56,12 +56,12 @@ const CHART_GROUPS = [
     label: "Nutrients (NPK)",
     fullLabel: "Nutrient Levels (NPK)",
     desc: "Nitrogen, phosphorus, and potassium over time",
-    color: "border-green-600 bg-green-50 text-green-700",
-    inactive: "border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50/50",
+    color: "border-cyan-600 bg-cyan-600 text-white shadow-sm",
+    inactive: "border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700",
     metrics: [
-      { key: "Nitrogen",   label: "Nitrogen (kg/ha)" },
+      { key: "Nitrogen", label: "Nitrogen (kg/ha)" },
       { key: "Phosphorus", label: "Phosphorus (kg/ha)" },
-      { key: "Potassium",  label: "Potassium (kg/ha)" },
+      { key: "Potassium", label: "Potassium (kg/ha)" },
     ],
   },
 ];
@@ -90,8 +90,8 @@ const buildTimeSeries = (rows: any[]) => {
 // ── Threshold zone colors ────────────────────
 const ZONE_COLORS = {
   critical: "rgba(239, 68, 68, 0.08)",   // red-500 at 8%
-  warning:  "rgba(245, 158, 11, 0.08)",  // amber-500 at 8%
-  normal:   "rgba(59, 130, 246, 0.08)",  // blue-500 at 8%
+  warning: "rgba(245, 158, 11, 0.08)",  // amber-500 at 8%
+  normal: "rgba(59, 130, 246, 0.08)",  // blue-500 at 8%
 };
 
 // ─────────────────────────────────────────────
@@ -103,9 +103,9 @@ const OverviewTab: React.FC<{
   globalToDate?: string;
   thresholds?: Record<string, ThresholdData> | null;
 }> = ({ backendOnline, selectedCrop, selectedSoil, globalFromDate, globalToDate, thresholds }) => {
-  const [timeSeries,  setTimeSeries]  = useState<any[]>([]);
-  const [fromDate,    setFromDate]    = useState("");
-  const [toDate,      setToDate]      = useState("");
+  const [timeSeries, setTimeSeries] = useState<any[]>([]);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [activeGroup, setActiveGroup] = useState("environmental");
 
   // ── Load data ──────────────────────────────
@@ -126,20 +126,20 @@ const OverviewTab: React.FC<{
   }, [backendOnline, selectedCrop, selectedSoil]);
 
   // ── Prepare display data ───────────────────
-  const sortedSeries    = [...timeSeries].sort((a, b) => a.date.localeCompare(b.date));
+  const sortedSeries = [...timeSeries].sort((a, b) => a.date.localeCompare(b.date));
   const availableMinDate = sortedSeries.length ? sortedSeries[0].date : "";
   const availableMaxDate = sortedSeries.length ? sortedSeries[sortedSeries.length - 1].date : "";
-  const defaultTo   = availableMaxDate;
+  const defaultTo = availableMaxDate;
   const defaultFrom = sortedSeries.length
     ? sortedSeries[Math.max(sortedSeries.length - 30, 0)].date
     : "";
   const effectiveFrom = globalFromDate || fromDate || defaultFrom;
-  const effectiveTo   = globalToDate   || toDate   || defaultTo;
+  const effectiveTo = globalToDate || toDate || defaultTo;
 
   const displaySeries = sortedSeries.filter(row => {
     if (!row.date) return false;
     if (effectiveFrom && row.date < effectiveFrom) return false;
-    if (effectiveTo   && row.date > effectiveTo)   return false;
+    if (effectiveTo && row.date > effectiveTo) return false;
     return true;
   });
 
@@ -152,15 +152,15 @@ const OverviewTab: React.FC<{
     const t = thresholds[metricKey];
     return {
       // Critical low zone
-      criticalLow:  { y1: t.min - 10,      y2: t.critical.low },
+      criticalLow: { y1: t.min - 10, y2: t.critical.low },
       // Warning low zone
-      warningLow:   { y1: t.critical.low,   y2: t.warning.low },
+      warningLow: { y1: t.critical.low, y2: t.warning.low },
       // Normal zone
-      normal:       { y1: t.normal.low,      y2: t.normal.high },
+      normal: { y1: t.normal.low, y2: t.normal.high },
       // Warning high zone
-      warningHigh:  { y1: t.warning.high,    y2: t.critical.high },
+      warningHigh: { y1: t.warning.high, y2: t.critical.high },
       // Critical high zone
-      criticalHigh: { y1: t.critical.high,   y2: t.max + 10 },
+      criticalHigh: { y1: t.critical.high, y2: t.max + 10 },
     };
   };
 
@@ -182,11 +182,10 @@ const OverviewTab: React.FC<{
             <button
               key={group.id}
               onClick={() => setActiveGroup(group.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold whitespace-nowrap ${
-                activeGroup === group.id
-                  ? group.color
-                  : group.inactive
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold whitespace-nowrap ${activeGroup === group.id
+                ? group.color
+                : group.inactive
+                }`}
             >
               {group.label}
             </button>

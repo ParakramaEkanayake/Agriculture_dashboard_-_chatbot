@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   LayoutDashboard, Leaf, Bot, Wifi, WifiOff, Menu, X, Sparkles,
-  Brain, TrendingUp, Database,
 } from "lucide-react";
 import KPICard from "./components/KPICard";
 import OverviewTab from "./components/OverviewTab";
@@ -23,86 +22,6 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] 
   { id: "thresholds", label: "Threshold Settings", icon: <Sparkles className="w-4 h-4" />, desc: "Configure alert thresholds for all metrics" },
   { id: "predict", label: "Crop Recommendation", icon: <Sparkles className="w-4 h-4" />, desc: "ML-powered crop suitability prediction" },
 ];
-// ── Dynamic banner content per tab ──────────
-const BANNER_CONTENT: Record<TabId, {
-  emoji: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  badges: { icon: React.ReactNode; label: string }[];
-}> = {
-  overview: {
-    emoji: "📊",
-    title: "Overview & Trends",
-    subtitle: "Environmental · Soil Health · Nutrient Monitoring",
-    description: "Explore seasonal patterns across temperature, moisture, rainfall, pH, and NPK levels. Use category filters to focus on specific aspects of your agricultural data.",
-    badges: [
-      { icon: <TrendingUp className="w-3 h-3" />, label: "Time Series Analysis" },
-      { icon: <Leaf className="w-3 h-3" />, label: "8 Metrics Tracked" },
-      { icon: <Database className="w-3 h-3" />, label: "Historical Data" },
-    ],
-  },
-  nutrients: {
-    emoji: "🔬",
-    title: "Soil & Nutrient Analysis",
-    subtitle: "NPK Comparison · Soil Profiles · Crop Requirements",
-    description: "Compare nitrogen, phosphorus, and potassium levels across different crops and soil types. Use radar charts and bar graphs to identify nutrient imbalances and optimize fertilizer application.",
-    badges: [
-      { icon: <Leaf className="w-3 h-3" />, label: "NPK Analysis" },
-      { icon: <TrendingUp className="w-3 h-3" />, label: "Soil Comparison" },
-      { icon: <Brain className="w-3 h-3" />, label: "Nutrient Insights" },
-    ],
-  },
-  predict: {
-    emoji: "🌾",
-    title: "Crop Recommendation",
-    subtitle: "AI-Powered · Random Forest Model · Decision Support",
-    description: "Enter your farm's environmental and soil conditions to receive machine learning-powered crop recommendations. The model analyzes 8 input variables to predict the most suitable crops with confidence scores.",
-    badges: [
-      { icon: <Brain className="w-3 h-3" />, label: "ML Prediction" },
-      { icon: <Sparkles className="w-3 h-3" />, label: "Top 3 Crops" },
-      { icon: <TrendingUp className="w-3 h-3" />, label: "Feature Importance" },
-    ],
-  },
-  correlation: {
-    emoji: "📈",
-    title: "Correlations",
-    subtitle: "Scatter Plots · Heatmap · Variable Relationships",
-    description: "Explore relationships between environmental and soil variables using interactive scatter plots and correlation heatmaps.",
-    badges: [
-      { icon: <TrendingUp className="w-3 h-3" />, label: "Correlation Analysis" },
-    ],
-  },
-  stats: {
-    emoji: "📋",
-    title: "Statistics",
-    subtitle: "Descriptive Statistics · Distributions",
-    description: "View detailed descriptive statistics and frequency distributions for all numeric variables in the dataset.",
-    badges: [
-      { icon: <Database className="w-3 h-3" />, label: "Statistical Summary" },
-    ],
-  },
-  thresholds: {
-    emoji: "⚙️",
-    title: "Threshold Settings",
-    subtitle: "Normal · Warning · Critical Range Configuration",
-    description: "Configure and customize alert thresholds for all agricultural metrics. Default values are derived from dataset statistics (Mean ± Standard Deviation). Adjust these to match your farm's specific conditions.",
-    badges: [
-      { icon: <TrendingUp className="w-3 h-3" />, label: "Data-Derived Defaults" },
-      { icon: <Sparkles className="w-3 h-3" />, label: "User Customizable" },
-      { icon: <Brain className="w-3 h-3" />, label: "Statistical Thresholds" },
-    ],
-  },
-  data: {
-    emoji: "📦",
-    title: "Data Table",
-    subtitle: "Raw Data · Export · Search",
-    description: "Browse, filter, search, and export raw agricultural data records.",
-    badges: [
-      { icon: <Database className="w-3 h-3" />, label: "Data Explorer" },
-    ],
-  },
-};
 // ─────────────────────────────────────────────
 function App() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -119,6 +38,7 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [filterSidebarOpen, setFilterSidebarOpen] = useState(false);
 
   // ── Fetch KPIs ─────────────────────────────
   useEffect(() => {
@@ -203,17 +123,28 @@ function App() {
       ══════════════════════════════════════ */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
 
-        {/* Top row: Logo + Tabs + Status */}
+        {/* Top row: Logo + Filter + Tabs + Status */}
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
 
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
-              <Leaf className="w-4 h-4 text-white" />
+          {/* Logo + Filter button */}
+          <div className="flex items-center gap-4">
+            {/* Logo */}
+            <div className="flex items-center gap-0.1">
+              {/* <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                <Leaf className="w-4 h-4 text-white" />
+              </div> */}
+                            <img src="src/images/logo-removebg-preview.png" alt="Logo" className="w-15 h-15" />
+                            <img src="src/images/wording.png" alt="Logo" className="w-35 h-35" />
             </div>
-            <span className="font-black text-gray-900 text-base tracking-tight hidden sm:block">
-              PolyAnalytics
-            </span>
+
+            {/* Filter hamburger */}
+            <button
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={() => setFilterSidebarOpen(v => !v)}
+              aria-label="Toggle filters"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Desktop tabs */}
@@ -222,12 +153,12 @@ function App() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
                   ? "bg-green-600 text-white shadow"
                   : "text-gray-600 hover:bg-gray-100"
                   }`}
               >
-                {tab.icon} {tab.label}
+                {tab.label}
               </button>
             ))}
           </nav>
@@ -258,98 +189,7 @@ function App() {
           </div>
         </div>
 
-        {/* Bottom row: Filters (Crop + Soil + Date) */}
-        <div className="hidden lg:block border-t border-gray-100">
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Filters:
-            </p>
 
-            {/* Crop */}
-            <div className="flex items-center gap-2">
-              <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                Crop
-              </label>
-              <select
-                className="border border-gray-200 rounded-lg bg-white px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
-                value={selectedCrop}
-                onChange={e => setSelectedCrop(e.target.value)}
-              >
-                {filters.crops?.map((crop: string) => (
-                  <option key={crop} value={crop}>{crop}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Soil */}
-            <div className="flex items-center gap-2">
-              <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                Soil
-              </label>
-              <select
-                className="border border-gray-200 rounded-lg bg-white px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
-                value={selectedSoil}
-                onChange={e => setSelectedSoil(e.target.value)}
-              >
-                <option value="all">All Soils</option>
-                {filters.soils?.map((soil: string) => (
-                  <option key={soil} value={soil}>{soil}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-6 bg-gray-200" />
-
-            {/* From date */}
-            <div className="flex items-center gap-2">
-              <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                From
-              </label>
-              <input
-                type="date"
-                className="border border-gray-200 rounded-lg bg-white px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
-                value={globalFromDate}
-                min="2025-10-23"
-                max={globalToDate || "2026-01-30"}
-                onChange={e => setGlobalFromDate(e.target.value)}
-              />
-            </div>
-
-            {/* To date */}
-            <div className="flex items-center gap-2">
-              <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                To
-              </label>
-              <input
-                type="date"
-                className="border border-gray-200 rounded-lg bg-white px-2 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
-                value={globalToDate}
-                min={globalFromDate || "2025-10-23"}
-                max="2026-01-30"
-                onChange={e => setGlobalToDate(e.target.value)}
-              />
-            </div>
-
-            {/* Reset */}
-            <button
-              onClick={() => { setGlobalFromDate(""); setGlobalToDate(""); }}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-500 hover:bg-gray-50 transition font-semibold"
-            >
-              Reset
-            </button>
-
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Summary */}
-            <p className="text-[10px] text-gray-400">
-              Showing: <b className="text-gray-600">{selectedCrop ? selectedCrop.charAt(0).toUpperCase() + selectedCrop.slice(1) : "All Crops"}</b>
-              {" · "}
-              <b className="text-gray-600">{selectedSoil === "all" ? "All Soils" : selectedSoil}</b>
-            </p>
-          </div>
-        </div>
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
@@ -360,111 +200,120 @@ function App() {
                 <button
                   key={tab.id}
                   onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }}
-                  className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-xs font-semibold transition-all ${activeTab === tab.id
+                  className={`px-2 py-2.5 rounded-xl text-xs font-semibold transition-all ${activeTab === tab.id
                     ? "bg-green-600 text-white"
                     : "text-gray-600 hover:bg-gray-100"
                     }`}
                 >
-                  {tab.icon}
                   <span className="text-[10px]">{tab.label}</span>
                 </button>
               ))}
             </div>
-            {/* Mobile filters */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1 block">Crop</label>
-                <select
-                  className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm"
-                  value={selectedCrop}
-                  onChange={e => setSelectedCrop(e.target.value)}
-                >
-                  {filters.crops?.map((crop: string) => (
-                    <option key={crop} value={crop}>{crop}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1 block">Soil</label>
-                <select
-                  className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm"
-                  value={selectedSoil}
-                  onChange={e => setSelectedSoil(e.target.value)}
-                >
-                  <option value="all">All Soils</option>
-                  {filters.soils?.map((soil: string) => (
-                    <option key={soil} value={soil}>{soil}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+
           </div>
         )}
       </header>
 
       {/* ══════════════════════════════════════
-          DYNAMIC BANNER (changes per tab)
+          FILTER SIDEBAR
       ══════════════════════════════════════ */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-green-900 via-green-800 to-emerald-700 text-white">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-48 -translate-y-48" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 translate-y-48" />
-        </div>
+      {/* Backdrop */}
+      {filterSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setFilterSidebarOpen(false)}
+        />
+      )}
 
-        <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+      {/* Sidebar */}
+      <div className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        filterSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+            <button
+              onClick={() => setFilterSidebarOpen(false)}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close filters"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-            {/* Left: Dynamic content */}
-            <div className="flex-1">
-              {/* Persona badge */}
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold text-green-100 mb-3">
-                <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-                Farm Managers · Agronomists · Policy Makers
-              </div>
-
-              {/* Title */}
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-                {BANNER_CONTENT[activeTab].emoji} {BANNER_CONTENT[activeTab].title}
-              </h1>
-              <p className="text-green-100 text-sm font-semibold mt-1">
-                {BANNER_CONTENT[activeTab].subtitle}
-              </p>
-              <p className="text-green-200 text-xs mt-2 max-w-xl leading-relaxed">
-                {BANNER_CONTENT[activeTab].description}
-              </p>
-
-              {/* Feature badges */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                {BANNER_CONTENT[activeTab].badges.map(badge => (
-                  <span
-                    key={badge.label}
-                    className="inline-flex items-center gap-1.5 bg-white/15 border border-white/20 rounded-full px-3 py-1 text-xs font-semibold"
-                  >
-                    {badge.icon} {badge.label}
-                  </span>
+          {/* Filters */}
+          <div className="space-y-6">
+            {/* Crop */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Crop</label>
+              <select
+                className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                value={selectedCrop}
+                onChange={e => setSelectedCrop(e.target.value)}
+              >
+                {filters.crops?.map((crop: string) => (
+                  <option key={crop} value={crop}>{crop}</option>
                 ))}
-              </div>
+              </select>
             </div>
 
-            {/* Right: Stats grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-3">
-              {[
-                { icon: <Database className="w-5 h-5" />, value: backendOnline ? (kpis.total_records ?? 0).toLocaleString() : "—", label: "Records", color: "from-green-500/30 to-green-600/30" },
-                { icon: <Leaf className="w-5 h-5" />, value: backendOnline ? kpis.crop_types ?? "33" : "33", label: "Crop Types", color: "from-emerald-500/30 to-emerald-600/30" },
-                { icon: <span className="text-xl">🏔️</span>, value: backendOnline ? kpis.soil_types ?? "5" : "5", label: "Soil Types", color: "from-amber-500/30 to-amber-600/30" },
-                { icon: <Brain className="w-5 h-5" />, value: "AI+ML", label: "Powered", color: "from-purple-500/30 to-purple-600/30" },
-              ].map(stat => (
-                <div key={stat.label} className={`bg-gradient-to-br ${stat.color} backdrop-blur-sm border border-white/20 rounded-2xl p-3 text-center`}>
-                  <div className="flex justify-center text-white/80 mb-1">{stat.icon}</div>
-                  <p className="text-xl font-black text-white">{stat.value}</p>
-                  <p className="text-[10px] text-green-200 font-medium">{stat.label}</p>
-                </div>
-              ))}
+            {/* Soil */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Soil Type</label>
+              <select
+                className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                value={selectedSoil}
+                onChange={e => setSelectedSoil(e.target.value)}
+              >
+                <option value="all">All Soils</option>
+                {filters.soils?.map((soil: string) => (
+                  <option key={soil} value={soil}>{soil}</option>
+                ))}
+              </select>
             </div>
 
+            {/* From date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+              <input
+                type="date"
+                className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                value={globalFromDate}
+                min="2025-10-23"
+                max={globalToDate || "2026-01-30"}
+                onChange={e => setGlobalFromDate(e.target.value)}
+              />
+            </div>
+
+            {/* To date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+              <input
+                type="date"
+                className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                value={globalToDate}
+                min={globalFromDate || "2025-10-23"}
+                max="2026-01-30"
+                onChange={e => setGlobalToDate(e.target.value)}
+              />
+            </div>
+
+            {/* Reset */}
+            <button
+              onClick={() => { setGlobalFromDate(""); setGlobalToDate(""); }}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50 transition font-semibold"
+            >
+              Reset Dates
+            </button>
           </div>
         </div>
       </div>
+
+      {/* ══════════════════════════════════════
+          FILTERS SECTION (centered) - REMOVED, now in sidebar
+      ══════════════════════════════════════ */}
+
       {/* ══════════════════════════════════════
           KPI CARDS (hidden on Predict tab)
       ══════════════════════════════════════ */}
@@ -613,15 +462,13 @@ function App() {
           FOOTER
       ══════════════════════════════════════ */}
       <footer className="border-t border-gray-200 bg-white">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-500">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <Leaf className="w-3 h-3 text-white" />
-            </div>
-            <span><b className="text-gray-600">PolyAnalytics</b> — Agricultural Intelligence Dashboard</span>
+            {/* <img src="src/images/logo-removebg-preview.png" alt="Logo" className="w-15 h-15" /> */}
+            <img src="src/images/wording.png" alt="Logo" className="w-30 h-20 object-contain" />
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            <span>🌾 33 Crops · 5 Soils · 13 Variables</span>
+            <span>33 Crops · 5 Soils · 13 Variables</span>
             <span className="text-gray-300">|</span>
             <span>LLaMA 3.3 · Random Forest ML</span>
           </div>

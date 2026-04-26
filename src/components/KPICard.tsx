@@ -1,4 +1,5 @@
 import React from "react";
+import { getMetricColorStyle } from "../utils/metricColors";
 
 interface ThresholdRange {
   low: number;
@@ -101,24 +102,35 @@ const KPICard: React.FC<Props> = ({
   thresholds,
 }) => {
   const status = getStatusFromThreshold(actualValue, thresholds, changePct, changeDir);
+  const accent = getMetricColorStyle(title);
 
   const arrow =
     changeDir === "up" ? "↑" :
     changeDir === "down" ? "↓" : "→";
 
+  const changeColorClass =
+    changeDir === "up" ? "text-emerald-500"
+    : changeDir === "down" ? "text-red-500"
+    : "text-slate-100";
+
   return (
     <div
-      className={`bg-white border-2 ${status.border} rounded-2xl p-5 shadow-sm flex items-center justify-between gap-4 min-w-0 transition-all hover:shadow-md`}
+      className={`relative ${accent.gradientClass} border-2 ${status.border} rounded-2xl p-5 shadow-sm flex items-center justify-between gap-4 min-w-0 transition-all hover:shadow-md`}
     >
+      <div className={`absolute -top-1 left-5 h-1.5 w-16 rounded-full ${accent.borderClass}`} />
+
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 truncate">
-          {title}
-        </p>
-        <p className="text-2xl font-black text-gray-900 truncate mt-0.5">
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`w-2.5 h-2.5 rounded-full ${accent.borderClass}`} />
+          <p className={`text-[10px] font-bold uppercase tracking-widest truncate ${accent.textClass}`}>
+            {title}
+          </p>
+        </div>
+        <p className={`text-2xl font-black mt-0.5 whitespace-normal break-words ${accent.textClass}`}>
           {value}
         </p>
         {subtitle && (
-          <p className="text-[10px] text-gray-400 mt-0.5 truncate">{subtitle}</p>
+          <p className="text-[10px] text-slate-200/80 mt-0.5">{subtitle}</p>
         )}
       </div>
 
@@ -130,12 +142,11 @@ const KPICard: React.FC<Props> = ({
 
         {/* Change indicator */}
         {changePct !== undefined && changeDir && (
-          <div className="flex items-center gap-0.5 text-[10px] text-gray-400">
-            <span>{arrow}</span>
+          <div className={`flex items-center gap-0.5 text-[14px] font-bold ${changeColorClass}`}>            <span>{arrow}</span>
             <span>{Math.abs(changePct)}%</span>
           </div>
         )}
-        <p className="text-[8px] text-gray-300">vs overall</p>
+        <p className="text-[9px] text-gray-300">vs overall</p>
       </div>
     </div>
   );

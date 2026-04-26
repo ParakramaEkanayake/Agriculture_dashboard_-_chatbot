@@ -32,9 +32,9 @@ interface CropSoilMap {
 
 // ── Colors ───────────────────────────────────
 const NUTRIENT_COLORS = {
-  Nitrogen:   "#b45309",
-  Phosphorus: "#92400e",
-  Potassium:  "#78350f",
+  Nitrogen:   "#22c55e",
+  Phosphorus: "#eab308",
+  Potassium:  "#f97316",
   Carbon:     "#78716c",
   Rainfall:   "#0ea5e9",
 };
@@ -47,24 +47,9 @@ const THRESHOLD_COLORS = {
 
 // ── Sub tabs ─────────────────────────────────
 const SUB_TABS = [
-  {
-    id: "npk",
-    label: "NPK Analysis",
-    desc: "Nitrogen, Phosphorus, and Potassium comparison across crops and soils",
-  },
-  {
-    id: "soil",
-    label: "Soil Profiles",
-    desc: "Soil-specific nutrient profiles, carbon levels, and radar comparison",
-  },
-  {
-    id: "distribution",
-    label: "Distributions",
-    desc: "Frequency distributions and rainfall-nutrient relationships",
-  },
-  { id: "npk",          label: "🌿 NPK Analysis",   desc: "Nitrogen, Phosphorus, and Potassium comparison across crops and soils" },
-  { id: "soil",         label: "🏔️ Soil Profiles",  desc: "Soil-specific nutrient profiles, carbon levels, and radar comparison" },
-  { id: "distribution", label: "📊 Distributions",   desc: "Frequency distributions and rainfall-nutrient relationships" },
+  { id: "npk",          label: "NPK Analysis",   desc: "Nitrogen, Phosphorus, and Potassium comparison across crops and soils" },
+  { id: "soil",         label: "Soil Profiles",  desc: "Soil-specific nutrient profiles, carbon levels, and radar comparison" },
+  { id: "distribution", label: "Distributions",   desc: "Frequency distributions and rainfall-nutrient relationships" },
 ];
 
 // ─────────────────────────────────────────────

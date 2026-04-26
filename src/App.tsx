@@ -34,6 +34,7 @@ function App() {
   const [globalToDate, setGlobalToDate] = useState("2026-01-30");
   const [thresholds, setThresholds] = useState<any>(null);
   const [customThresholds, setCustomThresholds] = useState<any>(null);
+  // const [showThresholds, setShowThresholds] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -443,7 +444,16 @@ function App() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <ChatBot backendOnline={backendOnline} onFilterChange={handleAIFilterChange} />
+            <ChatBot
+              backendOnline={backendOnline}
+              onFilterChange={handleAIFilterChange}
+              onTabChange={(tab: string) => {
+                if (tab === "predict") setActiveTab("predict");
+                if (tab === "overview") setActiveTab("overview");
+                if (tab === "nutrients") setActiveTab("nutrients");
+                if (tab === "thresholds") setActiveTab("thresholds");
+              }}
+            />
           </div>
         )}
       </div>

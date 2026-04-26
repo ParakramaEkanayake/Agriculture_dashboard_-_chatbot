@@ -32,24 +32,24 @@ interface CropSoilMap {
 
 // ── Colors ───────────────────────────────────
 const NUTRIENT_COLORS = {
-  Nitrogen:   "#22c55e",
-  Phosphorus: "#eab308",
-  Potassium:  "#f97316",
-  Carbon:     "#78716c",
-  Rainfall:   "#0ea5e9",
+  Nitrogen: "#44be71",
+  Phosphorus: "#b59db9",
+  Potassium: "#cabe77",
+  Carbon: "#78716c",
+  Rainfall: "#0ea5e9",
 };
 
 const THRESHOLD_COLORS = {
-  normal:   "#3b82f6",
-  warning:  "#f59e0b",
+  normal: "#3b82f6",
+  warning: "#f59e0b",
   critical: "#ef4444",
 };
 
 // ── Sub tabs ─────────────────────────────────
 const SUB_TABS = [
-  { id: "npk",          label: "NPK Analysis",   desc: "Nitrogen, Phosphorus, and Potassium comparison across crops and soils" },
-  { id: "soil",         label: "Soil Profiles",  desc: "Soil-specific nutrient profiles, carbon levels, and radar comparison" },
-  { id: "distribution", label: "Distributions",   desc: "Frequency distributions and rainfall-nutrient relationships" },
+  { id: "npk", label: "NPK Analysis", desc: "Nitrogen, Phosphorus, and Potassium comparison across crops and soils" },
+  { id: "soil", label: "Soil Profiles", desc: "Soil-specific nutrient profiles, carbon levels, and radar comparison" },
+  { id: "distribution", label: "Distributions", desc: "Frequency distributions and rainfall-nutrient relationships" },
 ];
 
 // ─────────────────────────────────────────────
@@ -59,14 +59,14 @@ const NutrientsTab: React.FC<{
   selectedSoil?: string;
   thresholds?: Record<string, ThresholdData> | null;
 }> = ({ backendOnline, selectedCrop, selectedSoil, thresholds }) => {
-  const [bySoil,       setBySoil]       = useState<any[]>([]);
-  const [byCrop,       setByCrop]       = useState<any[]>([]);
-  const [rfNit,        setRfNit]        = useState<any[]>([]);
-  const [histCol,      setHistCol]      = useState("Nitrogen");
-  const [histData,     setHistData]     = useState<any[]>([]);
+  const [bySoil, setBySoil] = useState<any[]>([]);
+  const [byCrop, setByCrop] = useState<any[]>([]);
+  const [rfNit, setRfNit] = useState<any[]>([]);
+  const [histCol, setHistCol] = useState("Nitrogen");
+  const [histData, setHistData] = useState<any[]>([]);
   const [activeSubTab, setActiveSubTab] = useState("npk");
-  const [brush,        setBrush]        = useState<BrushState>({ type: null, value: null });
-  const [mapping,      setMapping]      = useState<CropSoilMap | null>(null);
+  const [brush, setBrush] = useState<BrushState>({ type: null, value: null });
+  const [mapping, setMapping] = useState<CropSoilMap | null>(null);
 
   // ── Load data ──────────────────────────────
   const loadHist = (col: string) => {
@@ -82,7 +82,7 @@ const NutrientsTab: React.FC<{
       fetchNutrientsBySoil().then(setBySoil).catch(() => setBySoil(mockNutrientsBySoil));
       fetchNutrientsByCrop().then(setByCrop).catch(() => setByCrop(mockNutrientsByCrop));
       fetchRainfallNitrogen().then(setRfNit).catch(() => setRfNit(mockRainfallNitrogen));
-      fetchCropSoilMapping().then(setMapping).catch(() => {});
+      fetchCropSoilMapping().then(setMapping).catch(() => { });
     } else {
       setBySoil(mockNutrientsBySoil);
       setByCrop(mockNutrientsByCrop);
@@ -144,9 +144,9 @@ const NutrientsTab: React.FC<{
   const radarData = bySoil.map(d => ({
     subject: d.Soil?.replace(" Soil", "") ?? d.Soil,
     fullName: d.Soil,
-    N: +(d.Nitrogen   ?? 0).toFixed(1),
+    N: +(d.Nitrogen ?? 0).toFixed(1),
     P: +(d.Phosphorus ?? 0).toFixed(1),
-    K: +(d.Potassium  ?? 0).toFixed(1),
+    K: +(d.Potassium ?? 0).toFixed(1),
   }));
 
   // ── Threshold helpers ──────────────────────
@@ -155,11 +155,11 @@ const NutrientsTab: React.FC<{
     const t = thresholds[metricKey];
     return (
       <>
-        <ReferenceLine y={t.normal.low}    stroke={THRESHOLD_COLORS.normal}   strokeDasharray="4 4" strokeWidth={1} />
-        <ReferenceLine y={t.normal.high}   stroke={THRESHOLD_COLORS.normal}   strokeDasharray="4 4" strokeWidth={1} />
-        <ReferenceLine y={t.warning.low}   stroke={THRESHOLD_COLORS.warning}  strokeDasharray="4 4" strokeWidth={1} />
-        <ReferenceLine y={t.warning.high}  stroke={THRESHOLD_COLORS.warning}  strokeDasharray="4 4" strokeWidth={1} />
-        <ReferenceLine y={t.critical.low}  stroke={THRESHOLD_COLORS.critical} strokeDasharray="3 3" strokeWidth={1} />
+        <ReferenceLine y={t.normal.low} stroke={THRESHOLD_COLORS.normal} strokeDasharray="4 4" strokeWidth={1} />
+        <ReferenceLine y={t.normal.high} stroke={THRESHOLD_COLORS.normal} strokeDasharray="4 4" strokeWidth={1} />
+        <ReferenceLine y={t.warning.low} stroke={THRESHOLD_COLORS.warning} strokeDasharray="4 4" strokeWidth={1} />
+        <ReferenceLine y={t.warning.high} stroke={THRESHOLD_COLORS.warning} strokeDasharray="4 4" strokeWidth={1} />
+        <ReferenceLine y={t.critical.low} stroke={THRESHOLD_COLORS.critical} strokeDasharray="3 3" strokeWidth={1} />
         <ReferenceLine y={t.critical.high} stroke={THRESHOLD_COLORS.critical} strokeDasharray="3 3" strokeWidth={1} />
       </>
     );
@@ -191,11 +191,10 @@ const NutrientsTab: React.FC<{
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold whitespace-nowrap ${
-                activeSubTab === tab.id
-                  ? "border-green-600 bg-green-50 text-green-700"
-                  : "border-gray-200 text-gray-500 hover:border-green-300 hover:bg-green-50/50"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold whitespace-nowrap ${activeSubTab === tab.id
+                ? "border-cyan-600 bg-cyan-600 text-white shadow-sm"
+                : "border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700"
+                }`}
             >
               {tab.label}
             </button>
@@ -249,18 +248,22 @@ const NutrientsTab: React.FC<{
                 style={{ cursor: "pointer" }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="Crop" tick={{ fontSize: 11 }} tickFormatter={v => v.charAt(0).toUpperCase() + v.slice(1)} />
+                <XAxis
+                  dataKey="Crop"
+                  tick={{ fontSize: 11, fontWeight: 600 }}
+                  tickFormatter={v => v.charAt(0).toUpperCase() + v.slice(1)}
+                />
                 <YAxis tick={{ fontSize: 11 }} label={{ value: "kg/ha", angle: -90, position: "insideLeft", fontSize: 11 }} />
                 <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0" }} />
                 <Legend />
                 {renderThresholdLines("Nitrogen")}
-                <Bar dataKey="Nitrogen" name="Nitrogen (N)" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Nitrogen" name="Nitrogen (N)" fill={NUTRIENT_COLORS.Nitrogen} radius={[4, 4, 0, 0]}>
                   {byCrop.map((e: any) => <Cell key={e.Crop} fill={NUTRIENT_COLORS.Nitrogen} opacity={getOpacity("crop", e.Crop)} />)}
                 </Bar>
-                <Bar dataKey="Phosphorus" name="Phosphorus (P)" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Phosphorus" name="Phosphorus (P)" fill={NUTRIENT_COLORS.Phosphorus} radius={[4, 4, 0, 0]}>
                   {byCrop.map((e: any) => <Cell key={e.Crop} fill={NUTRIENT_COLORS.Phosphorus} opacity={getOpacity("crop", e.Crop)} />)}
                 </Bar>
-                <Bar dataKey="Potassium" name="Potassium (K)" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Potassium" name="Potassium (K)" fill={NUTRIENT_COLORS.Potassium} radius={[4, 4, 0, 0]}>
                   {byCrop.map((e: any) => <Cell key={e.Crop} fill={NUTRIENT_COLORS.Potassium} opacity={getOpacity("crop", e.Crop)} />)}
                 </Bar>
               </BarChart>
@@ -283,18 +286,24 @@ const NutrientsTab: React.FC<{
                 style={{ cursor: "pointer" }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="Soil" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" interval={0} />
+                <XAxis
+                  dataKey="Soil"
+                  tick={{ fontSize: 10, fontWeight: 600 }}
+                  angle={-30}
+                  textAnchor="end"
+                  interval={0}
+                />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0" }} />
                 <Legend />
                 {renderThresholdLines("Nitrogen")}
-                <Bar dataKey="Nitrogen" name="Nitrogen (N)" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Nitrogen" name="Nitrogen (N)" fill={NUTRIENT_COLORS.Nitrogen} radius={[4, 4, 0, 0]}>
                   {bySoil.map((e: any) => <Cell key={e.Soil} fill={NUTRIENT_COLORS.Nitrogen} opacity={getOpacity("soil", e.Soil)} />)}
                 </Bar>
-                <Bar dataKey="Phosphorus" name="Phosphorus (P)" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Phosphorus" name="Phosphorus (P)" fill={NUTRIENT_COLORS.Phosphorus} radius={[4, 4, 0, 0]}>
                   {bySoil.map((e: any) => <Cell key={e.Soil} fill={NUTRIENT_COLORS.Phosphorus} opacity={getOpacity("soil", e.Soil)} />)}
                 </Bar>
-                <Bar dataKey="Potassium" name="Potassium (K)" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Potassium" name="Potassium (K)" fill={NUTRIENT_COLORS.Potassium} radius={[4, 4, 0, 0]}>
                   {bySoil.map((e: any) => <Cell key={e.Soil} fill={NUTRIENT_COLORS.Potassium} opacity={getOpacity("soil", e.Soil)} />)}
                 </Bar>
               </BarChart>
@@ -318,9 +327,9 @@ const NutrientsTab: React.FC<{
                 <PolarGrid stroke="#e5e7eb" />
                 <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
                 <PolarRadiusAxis angle={90} domain={[0, "auto"]} tick={{ fontSize: 9 }} />
-                <Radar name="Nitrogen"   dataKey="N" stroke={NUTRIENT_COLORS.Nitrogen}   fill={NUTRIENT_COLORS.Nitrogen}   fillOpacity={0.2} />
+                <Radar name="Nitrogen" dataKey="N" stroke={NUTRIENT_COLORS.Nitrogen} fill={NUTRIENT_COLORS.Nitrogen} fillOpacity={0.2} />
                 <Radar name="Phosphorus" dataKey="P" stroke={NUTRIENT_COLORS.Phosphorus} fill={NUTRIENT_COLORS.Phosphorus} fillOpacity={0.2} />
-                <Radar name="Potassium"  dataKey="K" stroke={NUTRIENT_COLORS.Potassium}  fill={NUTRIENT_COLORS.Potassium}  fillOpacity={0.2} />
+                <Radar name="Potassium" dataKey="K" stroke={NUTRIENT_COLORS.Potassium} fill={NUTRIENT_COLORS.Potassium} fillOpacity={0.2} />
                 <Legend />
                 <Tooltip />
               </RadarChart>
@@ -345,8 +354,8 @@ const NutrientsTab: React.FC<{
                 <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0" }} />
                 {thresholds?.Carbon && (
                   <>
-                    <ReferenceLine x={thresholds.Carbon.normal.low}  stroke={THRESHOLD_COLORS.normal}  strokeDasharray="4 4" />
-                    <ReferenceLine x={thresholds.Carbon.normal.high} stroke={THRESHOLD_COLORS.normal}  strokeDasharray="4 4" />
+                    <ReferenceLine x={thresholds.Carbon.normal.low} stroke={THRESHOLD_COLORS.normal} strokeDasharray="4 4" />
+                    <ReferenceLine x={thresholds.Carbon.normal.high} stroke={THRESHOLD_COLORS.normal} strokeDasharray="4 4" />
                     <ReferenceLine x={thresholds.Carbon.warning.low} stroke={THRESHOLD_COLORS.warning} strokeDasharray="4 4" />
                   </>
                 )}
@@ -365,31 +374,30 @@ const NutrientsTab: React.FC<{
                 <div
                   key={soil.Soil}
                   onClick={() => handleBrushClick("soil", soil.Soil)}
-                  className={`rounded-xl p-4 border cursor-pointer transition-all ${
-                    brush.type === "soil" && brush.value === soil.Soil
-                      ? "bg-green-50 border-green-300 shadow-md ring-2 ring-green-200"
-                      : brush.type && getOpacity("soil", soil.Soil) < 1
-                        ? "bg-gray-50 border-gray-100 opacity-30"
-                        : "bg-gray-50 border-gray-100 hover:border-green-200 hover:shadow-sm"
-                  }`}
+                  className={`rounded-xl p-4 border cursor-pointer transition-all ${brush.type === "soil" && brush.value === soil.Soil
+                    ? "bg-green-50 border-green-300 shadow-md ring-2 ring-green-200"
+                    : brush.type && getOpacity("soil", soil.Soil) < 1
+                      ? "bg-gray-50 border-gray-100 opacity-30"
+                      : "bg-gray-50 border-gray-100 hover:border-green-200 hover:shadow-sm"
+                    }`}
                 >
-                  <p className="text-xs font-bold text-gray-700 mb-2">🏔️ {soil.Soil}</p>
-                  <div className="space-y-1.5 text-[10px]">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Nitrogen</span>
-                      <span className="font-mono font-semibold" style={{ color: NUTRIENT_COLORS.Nitrogen }}>{soil.Nitrogen?.toFixed(1)}</span>
+                  <p className="text-sm font-bold text-gray-700 mb-3">🏔️ {soil.Soil}</p>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">Nitrogen</span>
+                      <span className="font-mono font-bold text-sm" style={{ color: NUTRIENT_COLORS.Nitrogen }}>{soil.Nitrogen?.toFixed(1)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Phosphorus</span>
-                      <span className="font-mono font-semibold" style={{ color: NUTRIENT_COLORS.Phosphorus }}>{soil.Phosphorus?.toFixed(1)}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">Phosphorus</span>
+                      <span className="font-mono font-bold text-sm" style={{ color: NUTRIENT_COLORS.Phosphorus }}>{soil.Phosphorus?.toFixed(1)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Potassium</span>
-                      <span className="font-mono font-semibold" style={{ color: NUTRIENT_COLORS.Potassium }}>{soil.Potassium?.toFixed(1)}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">Potassium</span>
+                      <span className="font-mono font-bold text-sm" style={{ color: NUTRIENT_COLORS.Potassium }}>{soil.Potassium?.toFixed(1)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Carbon</span>
-                      <span className="font-mono font-semibold" style={{ color: NUTRIENT_COLORS.Carbon }}>{soil.Carbon?.toFixed(2)}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 font-medium">Carbon</span>
+                      <span className="font-mono font-bold text-sm" style={{ color: NUTRIENT_COLORS.Carbon }}>{soil.Carbon?.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -419,12 +427,12 @@ const NutrientsTab: React.FC<{
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="Crop" tick={{ fontSize: 12 }} tickFormatter={v => v.charAt(0).toUpperCase() + v.slice(1)} />
-                <YAxis yAxisId="rain" orientation="left"  tick={{ fontSize: 11 }} label={{ value: "Rainfall(mm)", angle: -90, position: "insideLeft", fontSize: 10 }} />
-                <YAxis yAxisId="nit"  orientation="right" tick={{ fontSize: 11 }} label={{ value: "Nitrogen",     angle: 90,  position: "insideRight", fontSize: 10 }} />
+                <YAxis yAxisId="rain" orientation="left" tick={{ fontSize: 11 }} label={{ value: "Rainfall(mm)", angle: -90, position: "insideLeft", fontSize: 10 }} />
+                <YAxis yAxisId="nit" orientation="right" tick={{ fontSize: 11 }} label={{ value: "Nitrogen", angle: 90, position: "insideRight", fontSize: 10 }} />
                 <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0" }} />
                 <Legend />
                 <Line yAxisId="rain" type="monotone" dataKey="Rainfall" stroke={NUTRIENT_COLORS.Rainfall} strokeWidth={2.5} dot={{ r: 5 }} />
-                <Line yAxisId="nit"  type="monotone" dataKey="Nitrogen" stroke={NUTRIENT_COLORS.Nitrogen} strokeWidth={2.5} dot={{ r: 5 }} />
+                <Line yAxisId="nit" type="monotone" dataKey="Nitrogen" stroke={NUTRIENT_COLORS.Nitrogen} strokeWidth={2.5} dot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           </SectionCard>
